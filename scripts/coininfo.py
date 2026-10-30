@@ -35,7 +35,7 @@ def main():
     M = json.load(open(os.path.join(a.out, "market.json")))
     coins = {x["code"]: x for x in json.load(open(os.path.join(ROOT, "data", "coins.json")))}
     store = json.load(open(STORE)) if os.path.exists(STORE) else {"items": {}}
-    items = store.get("items", {})
+    items = {c: v for c, v in store.get("items", {}).items() if c in M["stocks"]}  # buang coin yang sudah dikeluarkan dari senarai
     try:
         import yfinance as yf
     except Exception:

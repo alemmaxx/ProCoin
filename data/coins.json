@@ -14,7 +14,6 @@
  {"code": "LTC", "name": "Litecoin", "yf": "LTC-USD", "q": "Litecoin"},
  {"code": "HBAR", "name": "Hedera", "yf": "HBAR-USD", "q": "Hedera HBAR"},
  {"code": "SUI", "name": "Sui", "yf": "SUI20947-USD", "q": "Sui crypto", "alt": ["SUI-USD"]},
- {"code": "TON", "name": "Toncoin", "yf": "TON11419-USD", "q": "Toncoin", "alt": ["TON-USD"]},
  {"code": "DOT", "name": "Polkadot", "yf": "DOT-USD", "q": "Polkadot"},
  {"code": "UNI", "name": "Uniswap", "yf": "UNI7083-USD", "q": "Uniswap", "alt": ["UNI-USD"]},
  {"code": "NEAR", "name": "NEAR Protocol", "yf": "NEAR-USD", "q": "NEAR Protocol"},

@@ -19,7 +19,9 @@ Crypto berdagang 24/7. "Harga tutup harian" = harga pada 8 pagi waktu Malaysia (
 
 Fail `data/coins.json`. Setiap coin: `code` (kod dalam app), `name`, `yf` (ticker Yahoo Finance), `q` (kata carian berita).
 Tambah atau buang coin di sini sahaja; robot akan ikut pada larian seterusnya. Stablecoin (USDT, USDC) sengaja tidak dimasukkan.
-Untuk coin yang ticker Yahoo-nya pelik (cth. SUI = `SUI20947-USD`, TON = `TON11419-USD`, UNI = `UNI7083-USD`), semak di finance.yahoo.com.
+Untuk coin yang ticker Yahoo-nya pelik (cth. SUI = `SUI20947-USD`, UNI = `UNI7083-USD`), semak di finance.yahoo.com. Medan pilihan `alt` = senarai ticker ganti jika ticker utama tiada harga. Toncoin (TON) tidak dimasukkan kerana Yahoo tiada sejarah harganya.
+
+Yahoo kadang-kadang lewat menerbitkan bar harian crypto terkini; robot mengisi bar harian yang tertinggal (hari UTC yang sudah lengkap) daripada data sejam.
 
 ## Kebarangkalian & paras harga
 
