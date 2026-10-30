@@ -351,6 +351,11 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 @media (min-width:820px){.rbk{grid-template-columns:repeat(4,1fr)}}
 .eq{position:relative;height:200px;margin:8px 70px 24px 0}
 .eq svg{position:absolute;inset:0;width:100%;height:100%}
+.eq.eqs{height:96px;margin:6px 62px 20px 0}.eq.eqs .eqv,.eq.eqs .eqz{font-size:11px}.eq.eqs .hcd{font-size:10.5px}
+.eqcard h2{font-size:15px;margin-bottom:2px}.eqcard{padding-top:12px;padding-bottom:6px}
+.rlist h2{font-size:15px;margin-bottom:4px}.rlist .mrow.mc{padding:7px 0}.rlist .mhd{gap:8px}.rlist .mhd>span:first-child{font-size:13px;line-height:1.3}.rlist .mhd b{font-size:13.5px}.rlist .code{font-size:11px}
+.rlist .mtag{width:16px;height:16px;font-size:9.5px;border-radius:5px;margin-right:4px}.rlist .badge{font-size:10.5px;padding:1px 7px;margin-top:2px!important}.rlist small.muted{font-size:11px}
+.rlist .mnow small{display:none}.rlist .mnow b{font-size:14.5px;line-height:1.2}.rlist .mnow em{font-size:11.5px}
 .eq .eq0{stroke:var(--muted);stroke-dasharray:3 4;stroke-width:1;vector-effect:non-scaling-stroke;opacity:.6}
 .eqz{position:absolute;left:calc(100% + 8px);transform:translateY(-50%);font-size:11px;color:var(--muted)}
 .eqv{position:absolute;left:calc(100% + 8px);transform:translateY(-50%);font-size:12px;font-weight:800;background:var(--card2);padding:2px 6px;border-radius:6px}
@@ -1280,10 +1285,10 @@ function rManual(){
   h+=autoCardHTML();
   if(M.length){const cs=cl.slice().sort((a,b)=>a.closed.end.localeCompare(b.closed.end));let cum=0;const first=M.map(p=>p.d).sort()[0];
     const cv=[[first,0],...cs.map(p=>[p.closed.end,cum+=manPnl(p,p.closed.exit)])];if(op.length||cv.length<2)cv.push([today(),cum+opn]);
-    h+=`<div class="card"><h2>Graf untung / rugi</h2><p class="muted" style="margin-top:0;font-size:13px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1)}</div>`;}
+    h+=`<div class="card eqcard"><h2>Graf untung / rugi</h2><p class="muted" style="margin:0;font-size:12px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1,'eqs')}</div>`;}
   if(!M.length)h+=`<div class="card"><p class="muted" style="margin:0">Belum ada coin. Buka mana-mana coin dan tekan butang ✍️ Manual di atas kanan untuk mula ujian.</p></div>`;
-  if(op.length)h+=`<div class="card"><h2>Sedang diuji (${op.length})</h2>${op.map(manRow).join('')}</div>`;
-  if(cl.length)h+=`<div class="card"><h2>Selesai (${cl.length})</h2>${cl.map(manRow).join('')}</div>`;
+  if(op.length)h+=`<div class="card rlist"><h2>Sedang diuji (${op.length})</h2>${op.map(manRow).join('')}</div>`;
+  if(cl.length)h+=`<div class="card rlist"><h2>Selesai (${cl.length})</h2>${cl.map(manRow).join('')}</div>`;
   if(M.length)h+=`<p class="disc" style="margin:6px var(--gut) 0">Ujian maya tanpa wang sebenar. Untung/rugi termasuk yuran beli, yuran jual dan spread ikut platform anda (${esc(costLabel())}, ${(costRT()*100).toFixed(2)}% pergi-balik). Ini bacaan indicator, bukan cadangan beli atau jual.</p>`;
   return h;}
 function manReset(ids){const del=new Set(ids);S.manual=(S.manual||[]).filter(p=>!del.has(p.id));S.manDel=[...new Set([...(S.manDel||[]),...ids])].slice(-300);save();rRobot();}
@@ -1299,12 +1304,12 @@ function bindManual(){bindAuto();
 }
 function rbStake(){return num(S.settings.paperStake)||20;}
 function rmS(n){const v=(Number(n)||0);return (v>0?'+':v<0?'−':'')+rm(Math.abs(v));}
-function equitySVG(curve,scale){
+function equitySVG(curve,scale,cls){
   if(!curve||curve.length<2)return `<div class="muted" style="padding:16px 0">Belum cukup dagangan selesai untuk melukis graf.</div>`;
   const W=600,H=200,pad=6,v=curve.map(x=>x[1]*scale),mn=Math.min(0,...v),mx=Math.max(0,...v),r=mx-mn||1;
   const X=i=>pad+(W-2*pad)*i/(v.length-1),Y=x=>pad+(H-2*pad)*(1-(x-mn)/r);
   const pts=v.map((x,i)=>`${X(i).toFixed(1)},${Y(x).toFixed(1)}`).join(' ');const last=v[v.length-1],col=last>=0?'var(--green)':'var(--red)';
-  return `<div class="eq"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" class="eq0"/>
+  return `<div class="eq${cls?' '+cls:''}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" class="eq0"/>
     <polygon points="${X(0)},${Y(0)} ${pts} ${X(v.length-1)},${Y(0)}" style="fill:${col};opacity:.14"/><polyline points="${pts}" fill="none" style="stroke:${col}" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>
     <span class="eqz" style="top:${(Y(0)/H*100).toFixed(1)}%">$0</span><span class="eqv ${last>=0?'up':'dn'}" style="top:${(Y(last)/H*100).toFixed(1)}%">${rmS(last)}</span>
     <span class="hcd l">${fmtD(curve[0][0])}</span><span class="hcd r">${fmtD(curve[curve.length-1][0])}</span></div>`;
