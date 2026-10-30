@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-30T16:04+00:00",
+ "generated": "2026-10-30T16:50+00:00",
  "asof": "2026-10-29",
  "provider": "yfinance",
  "currency": "USD",
@@ -50,42 +50,42 @@
    "d75": 14,
    "ev": -0.81
   },
-  "rsi2": {
-   "name": "RSI(2) bawah 10 dalam trend menaik (lantunan pendek)",
-   "n": 541,
-   "w": 353,
-   "p": 65,
-   "md": 4,
-   "d25": 3,
-   "d75": 5,
-   "ev": 0.75,
-   "aw": 4.53,
+  "drop15": {
+   "name": "Jatuh mendadak dalam trend naik (lantunan)",
+   "n": 101,
+   "w": 76,
+   "p": 75,
+   "md": 6.0,
+   "d25": 4,
+   "d75": 8,
+   "ev": 3.63,
+   "aw": 7.95,
    "cf": "tinggi",
    "grade": "A",
-   "rule": "Keluar bila harga tutup atas EMA5, atau selepas 10 hari. Cut loss 2.5\u00d7 ATR.",
-   "kATR": 2.5,
-   "max": 10
+   "rule": "Masuk bila coin jatuh lebih 15% dalam 3 hari tetapi masih atas EMA200. Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3\u00d7 ATR.",
+   "kATR": 3.0,
+   "max": 20
   },
-  "brk20": {
-   "name": "Breakout 20 hari + trailing stop 3\u00d7 ATR",
-   "n": 683,
-   "w": 269,
-   "p": 39,
-   "md": 11,
-   "d25": 6,
-   "d75": 18,
-   "ev": 0.52,
-   "aw": 16.16,
+  "ema2050": {
+   "name": "Trend: EMA20 lintas atas EMA50 (atas EMA200)",
+   "n": 135,
+   "w": 50,
+   "p": 37,
+   "md": 89.0,
+   "d25": 63,
+   "d75": 133,
+   "ev": 12.64,
+   "aw": 55.41,
    "cf": "tinggi",
    "grade": "B",
-   "rule": "Trailing stop 3\u00d7 ATR di bawah harga tertinggi sejak beli (naik ikut harga, tidak turun).",
-   "kATR": 3.0,
-   "max": 120
+   "rule": "Masuk bila EMA20 lintas atas EMA50 (harga atas EMA200). Pegang selagi trend kekal; keluar bila EMA20 jatuh bawah EMA50.",
+   "kATR": null,
+   "max": 365
   }
  },
  "strat": {
-  "rsi2": "A",
-  "brk20": "B"
+  "drop15": "A",
+  "ema2050": "B"
  },
  "klci": {
   "d": "2026-10-29",
