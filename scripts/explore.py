@@ -118,16 +118,16 @@ STRATS = {
     "b55_k5b": ("Breakout 55 hari + BTC naik + trailing 5× ATR",
                 lambda x, t: t >= 55 and x.c[t] > hh(x.h, t, 55) and x.bu[t], None, (5.0, True), 365),
     # --- momentum masa (tempoh tetap)
-    "m_month": ("Awal bulan: momentum 90 hari positif + atas EMA200 + BTC naik, pegang 1 bulan",
+    "m_month": ("Awal bulan: momentum 90 hari positif + atas EMA200 + BTC naik; semak semula setiap bulan",
                 lambda x, t: first_of_month(x, t) and ret_n(x, t, 90) is not None and ret_n(x, t, 90) > 0
                 and x.e200[t] is not None and x.c[t] > x.e200[t] and x.bu[t],
-                lambda x, j, e: j > e and first_of_month(x, j), None, 40),
-    "m_month30": ("Awal bulan: momentum 30 hari positif + BTC naik, pegang 1 bulan",
+                lambda x, j, e: j > e and first_of_month(x, j) and not (ret_n(x, j, 90) > 0 and x.c[j] > x.e200[j] and x.bu[j]), None, 400),
+    "m_month30": ("Awal bulan: momentum 30 hari positif + BTC naik; semak semula setiap bulan",
                   lambda x, t: first_of_month(x, t) and ret_n(x, t, 30) is not None and ret_n(x, t, 30) > 0 and x.bu[t],
-                  lambda x, j, e: j > e and first_of_month(x, j), None, 40),
-    "m_week": ("Isnin: momentum 28 hari positif + BTC naik, pegang 1 minggu",
+                  lambda x, j, e: j > e and first_of_month(x, j) and not (ret_n(x, j, 30) > 0 and x.bu[j]), None, 400),
+    "m_week": ("Isnin: momentum 28 hari positif + BTC naik; semak semula setiap minggu",
                lambda x, t: monday(x, t) and ret_n(x, t, 28) is not None and ret_n(x, t, 28) > 0 and x.bu[t],
-               lambda x, j, e: j >= e + 6, None, 10),
+               lambda x, j, e: j > e and monday(x, j) and not (ret_n(x, j, 28) > 0 and x.bu[j]), None, 400),
     # --- lantunan (mean reversion) versi lebih ketat / pegang lebih lama
     "r2_10": ("RSI(2)<10 atas EMA200, keluar atas EMA5 (sistem sekarang)",
               lambda x, t: x.r2[t] is not None and x.e200[t] is not None and x.r2[t] < 10 and x.c[t] > x.e200[t],
