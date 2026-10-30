@@ -300,6 +300,8 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 .capbox{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}.capg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.capg>div{background:var(--card);border-radius:10px;padding:8px 10px}.capg small{display:block;color:var(--muted);font-size:12px}
 .auopt.off{opacity:.45;pointer-events:none}
 #main{overflow-x:clip}
+.perfb{display:block;width:calc(100% - 2*var(--gut));margin:0 auto 12px;box-sizing:border-box}
+.pft td,.pft th{padding:6px 4px;text-align:right;font-size:12.5px}.pft td:first-child,.pft th:first-child{text-align:left}.pft td:nth-child(2){text-align:left}
 .capd{display:block;width:calc(100% - 2*var(--gut));box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer}.capd0{display:flex;align-items:center;gap:12px}.capd0>span:first-child{font-size:24px}.capd0>span:nth-child(2){flex:1;display:flex;flex-direction:column}.capd0 small{color:var(--muted);font-size:12.5px}
 .capv{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:10px 0 8px}.capv b{font-size:26px}.capv>span{font-weight:700;font-size:15px}.capv small{flex-basis:100%;color:var(--muted);font-size:12px}
 .capbar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden}.capbar span{display:block;height:100%;background:var(--gold);border-radius:6px}.capbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:4px 0 10px}
@@ -357,7 +359,7 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 @media (min-width:820px){.rbk{grid-template-columns:repeat(4,1fr)}}
 .eq{position:relative;height:200px;margin:8px 70px 24px 0}
 .eq svg{position:absolute;inset:0;width:100%;height:100%}
-.eq.eqs{height:96px;margin:6px 62px 20px 0}.eq.eqs .eqv,.eq.eqs .eqz{font-size:11px}.eq.eqs .hcd{font-size:10.5px}
+.eq.eqs{height:96px;margin:6px 78px 20px 0}.eq.eqs .eqv,.eq.eqs .eqz{font-size:11px}.eq.eqs .hcd{font-size:10.5px}
 .eqcard h2{font-size:15px;margin-bottom:2px}.eqcard{padding-top:12px;padding-bottom:6px}
 .rlist h2{font-size:15px;margin-bottom:4px}.rlist .mrow.mc{padding:7px 0}.rlist .mhd{gap:8px}.rlist .mhd>span:first-child{font-size:13px;line-height:1.3}.rlist .mhd b{font-size:13.5px}.rlist .code{font-size:11px}
 .rlist .mtag{width:16px;height:16px;font-size:9.5px;border-radius:5px;margin-right:4px}.rlist .badge{font-size:10.5px;padding:1px 7px;margin-top:2px!important}.rlist small.muted{font-size:11px}
@@ -1091,6 +1093,56 @@ function capCardHTML(){const a=AUTO(),C=capState();
     <div class="capbar"><span style="width:${use.toFixed(1)}%"></span></div><div class="capbl"><span>Dalam pasaran ${use.toFixed(0)}%</span><span>Tunai ${(100-use).toFixed(0)}%</span></div>
     <div class="capg3">${c('Dalam pasaran',rm(C.lock))}${c('Baki tersedia',rm(C.free),C.free>=C.per*.5?'':'dn')}${c('Posisi terbuka',C.open)}${c('Untung/rugi terbuka',rmS(C.unreal),C.unreal>=0?'up':'dn')}${c('Untung/rugi selesai',rmS(C.real),C.real>=0?'up':'dn')}${c('Saiz setiap posisi',rm(C.per))}</div>
     <small class="muted capn">${C.slots?`Boleh masuk ${C.slots} posisi lagi`:'Modal penuh: robot tunggu posisi ditutup'} · ${C.n} dagangan Auto sejak ${a.capAt?fmtD(new Date(a.capAt+8*3600e3).toISOString().slice(0,10)):'-'} · kos ${(costRT()*100).toFixed(2)}% pergi-balik</small></button>`;}
+/* ===== PRESTASI LEPAS SISTEM (simulasi Robot Auto atas isyarat sebenar 6 / 12 bulan lepas) =====
+   Data: perf.json (robot harian) = semua dagangan strategi atas semua coin, pulangan KASAR.
+   App tolak kos platform pengguna dan main semula peraturan Robot Auto: modal dibahagi 5 (≈20% nilai semasa setiap posisi),
+   satu posisi setiap coin, masuk hanya jika baki cukup. */
+let PERF=null,PF={m:12,k:'rsi2'};
+async function getPerf(){if(PERF)return PERF;const r=await dfetch('perf.json?v='+((S.market&&S.market.meta.generated)||today()));if(!r.ok)throw new Error('nf');PERF=await r.json();return PERF;}
+function perfSim(P,months,which){
+  const end=P.asof,dt=parseD(end);dt.setMonth(dt.getMonth()-months);const from=isoD(dt);
+  const cost=costRT()*100,C=capState(),cap=C?C.cap:1000;
+  const T=P.t.filter(x=>x[2]>=from&&(which==='all'||x[1]===which)).map(x=>({c:x[0],k:x[1],in:x[2],out:x[3],net:x[4]-cost,days:x[5],open:!!x[6]}));
+  const cl=T.filter(x=>!x.open),w=cl.filter(x=>x.net>0);
+  // simulasi portfolio ala Robot Auto
+  let free=cap,eq=cap;const held={},taken=[],curve=[[from,0]];let skip=0,peak=cap,mdd=0;
+  const ex=[];const settle=d=>{ex.sort((a,b)=>a.out.localeCompare(b.out));while(ex.length&&ex[0].out<=d&&!ex[0].open){const x=ex.shift();const pl=x.amt*x.net/100;free+=x.amt+pl;eq+=pl;delete held[x.c];x.pl=pl;curve.push([x.out,eq-cap]);peak=Math.max(peak,eq);mdd=Math.max(mdd,(peak-eq)/peak*100);}};
+  T.forEach(x=>{settle(x.in);if(held[x.c]){skip++;return;}const per=eq/5;const amt=free>=per?per:(free>=per*.5?free:null);if(amt==null){skip++;return;}
+    free-=amt;held[x.c]=1;const y={...x,amt};taken.push(y);ex.push(y);});
+  settle('9999');let unreal=0;ex.forEach(x=>{x.pl=x.amt*x.net/100;unreal+=x.pl;});
+  const fin=eq+unreal;if(unreal)curve.push([end,fin-cap]);
+  const b=P.btc||[],b0=b.find(x=>x[0]>=from),b1=b[b.length-1],hold=b0&&b1?(b1[1]/b0[1]-1)*100:null;
+  const mon={};taken.filter(x=>!x.open).forEach(x=>{const k=x.out.slice(0,7);(mon[k]=mon[k]||{n:0,w:0,pl:0});mon[k].n++;if(x.net>0)mon[k].w++;mon[k].pl+=x.pl;});
+  const tc=taken.filter(x=>!x.open);
+  return {from,end,cap,cost,T,cl,w,taken,tc,skip,fin,ret:(fin/cap-1)*100,mdd,curve,hold,mon,unreal,open:taken.filter(x=>x.open),
+    avg:cl.length?cl.reduce((t,x)=>t+x.net,0)/cl.length:null,best:cl.length?Math.max(...cl.map(x=>x.net)):null,worst:cl.length?Math.min(...cl.map(x=>x.net)):null,
+    days:cl.length?cl.reduce((t,x)=>t+x.days,0)/cl.length:null,twin:tc.length?tc.filter(x=>x.net>0).length/tc.length*100:null};}
+async function openPerf(){const en=S.settings.lang==='en',L=(b,e)=>en?e:b;
+  openSheet(`<p class="muted">${L('Memuatkan prestasi lepas…','Loading past performance…')}</p>`);
+  let P;try{P=await getPerf();}catch(e){openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">📊 ${L('Prestasi lepas','Past performance')}</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div><p class="muted">${L('Data prestasi belum tersedia. Ia dijana oleh robot harian pada larian seterusnya (sekitar 8.30 pagi).','Performance data is not available yet. It is produced by the daily robot on its next run (around 8.30am).')}</p>`);return;}
+  const draw=()=>{const R=perfSim(P,PF.m,PF.k),f=(v,d=1)=>v==null?'-':(v>0?'+':'')+v.toFixed(d)+'%',cls=v=>v==null?'':v>=0?'up':'dn';
+    const SN={rsi2:L('Isyarat aktif · RSI 2','Active signal · RSI 2'),brk20:L('Pemerhatian · Breakout 20','Watch · Breakout 20'),all:L('Semua isyarat','All signals')};
+    const c=(l,v,k='')=>`<div><small>${l}</small><b class="${k}">${v}</b></div>`;
+    const months=Object.keys(R.mon).sort().reverse();
+    let h=`<div class="row between" style="align-items:center"><h2 style="margin:0">📊 ${L('Prestasi lepas sistem','System past performance')}</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>
+    <p class="muted" style="margin:6px 0 10px;font-size:12.5px">${L('Main semula peraturan Robot Auto atas semua isyarat sebenar dalam tempoh ini.','Replays the Auto Robot rules on every real signal in this period.')}</p>
+    <div class="nfil" style="grid-template-columns:repeat(2,minmax(0,1fr))">${[[6,L('6 bulan','6 months')],[12,L('12 bulan','12 months')]].map(([m,l])=>`<button class="btn sm ${PF.m===m?'gold':'sec'}" data-pm="${m}">${l}</button>`).join('')}</div>
+    <div class="nfil" style="margin-top:6px">${['rsi2','brk20','all'].map(k=>`<button class="btn sm ${PF.k===k?'gold':'sec'}" data-pk="${k}" style="font-size:12px;padding:6px 4px">${k==='rsi2'?'🟢 RSI 2':k==='brk20'?'👀 Breakout 20':L('Semua','All')}</button>`).join('')}</div>
+    <div class="card" style="margin:12px 0 0"><div class="muted" style="font-size:12px">${SN[PF.k]} · ${fmtD(R.from)} – ${fmtD(R.end)}</div>
+     <div class="capv"><b class="${cls(R.ret)}">${rm(R.fin)}</b><span class="${cls(R.ret)}">${f(R.ret,2)}</span><small>${L(`daripada modal ${rm(R.cap)}`,`from ${rm(R.cap)} capital`)}${R.hold!=null?L(` · beli & pegang BTC ${f(R.hold)}`,` · BTC buy & hold ${f(R.hold)}`):''}</small></div>
+     <div class="capg3">${c(L('Dagangan robot','Robot trades'),R.tc.length+(R.open.length?` <small style="display:inline">+${R.open.length} ${L('buka','open')}</small>`:''))}${c(L('Menang','Win rate'),R.twin==null?'-':R.twin.toFixed(0)+'%')}${c(L('Max drawdown','Max drawdown'),R.mdd?'−'+R.mdd.toFixed(1)+'%':'0%','dn')}
+     ${c(L('Purata / dagangan','Avg / trade'),f(R.avg,2),cls(R.avg))}${c(L('Terbaik','Best'),f(R.best),'up')}${c(L('Terburuk','Worst'),f(R.worst),'dn')}
+     ${c(L('Semua isyarat','All signals'),R.cl.length)}${c(L('Dilangkau','Skipped'),R.skip)}${c(L('Purata tempoh','Avg length'),R.days==null?'-':R.days.toFixed(1)+L(' hari',' days'))}</div>
+     <p class="muted" style="font-size:11.5px;margin:8px 0 0">${L(`Kos ${esc(costLabel())} ${R.cost.toFixed(2)}% pergi-balik ditolak setiap dagangan. Setiap posisi ≈20% nilai semasa, satu posisi setiap coin. "Dilangkau" = isyarat yang tidak dapat diambil kerana modal penuh atau coin sudah dipegang.`,`${esc(trCost(costLabel()))} cost ${R.cost.toFixed(2)}% round trip deducted from every trade. Each position ≈20% of current value, one position per coin. "Skipped" = signals that could not be taken because capital was full or the coin was already held.`)}</p></div>
+    <div class="card eqcard" style="margin:10px 0 0"><h2>${L('Graf untung / rugi','Profit / loss chart')}</h2>${equitySVG(R.curve,1,'eqs')}</div>`;
+    if(months.length)h+=`<div class="card" style="margin:10px 0 0"><h2 style="font-size:15px">${L('Ikut bulan','By month')}</h2><table class="cmpt pft"><tr><th>${L('Bulan','Month')}</th><th>${L('Dagangan','Trades')}</th><th>${L('Menang','Won')}</th><th>${L('Untung/rugi','P/L')}</th></tr>${months.map(k=>{const x=R.mon[k];return `<tr><td>${new Date(k+'-15').toLocaleDateString(en?'en-GB':'ms-MY',{month:'short',year:'numeric'})}</td><td>${x.n}</td><td>${x.w}</td><td class="${x.pl>=0?'up':'dn'}">${rmS(x.pl)}</td></tr>`;}).join('')}</table></div>`;
+    const TL=R.taken.slice().reverse();
+    if(TL.length)h+=`<details class="card how" style="margin:10px 0 0;padding:4px 16px"><summary>${L(`Senarai dagangan robot (${TL.length})`,`Robot trade list (${TL.length})`)}</summary><table class="cmpt pft"><tr><th>${L('Masuk','In')}</th><th>Coin</th><th>${L('Hari','Days')}</th><th>${L('Bersih','Net')}</th></tr>${TL.map(x=>`<tr><td>${fmtD(x.in)}${x.open?` <small class="muted">${L('buka','open')}</small>`:''}</td><td><b>${esc(x.c)}</b> <small class="muted">${x.k==='rsi2'?'RSI2':'BRK20'}</small></td><td>${x.days}</td><td class="${x.net>=0?'up':'dn'}">${f(x.net)}</td></tr>`).join('')}</table></details>`;
+    h+=`<p class="disc" style="margin-top:10px">${L('Simulasi atas data sejarah: masuk pada harga buka hari selepas isyarat, keluar ikut peraturan strategi. Strategi ini dipilih menggunakan data sejarah yang sama, jadi keputusan sebenar biasanya lebih rendah. Berita Berpotensi tidak termasuk. Prestasi lepas bukan jaminan, bukan cadangan beli atau jual.','Simulation on historical data: enter at the open of the day after the signal, exit by the strategy rules. These strategies were chosen using the same historical data, so real results are usually lower. Potential news is not included. Past performance is not a guarantee, not a buy or sell recommendation.')}</p>`;
+    $('#sheetBody').innerHTML=`<div class="notr">${h}</div>`;
+    document.querySelectorAll('[data-pm]').forEach(b=>b.onclick=()=>{PF.m=+b.dataset.pm;draw();});
+    document.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{PF.k=b.dataset.pk;draw();});};
+  openSheet('<div></div>');draw();}
 function autoCardHTML(){const a=AUTO();const ty=[a.sig&&'🟢',a.news&&'📰'].filter(Boolean).join(' ');
   return `<button class="card autob" id="auBtn"><span class="autob-ic">🤖</span><span class="autob-t"><b>Robot Auto</b><small>${a.on?(capState()?`Hidup · ${ty||'tiada jenis dipilih'} · untung ${a.tp}%`:`Hidup · ${ty||'tiada jenis dipilih'} · $${a.stake} · untung ${a.tp}%`):'Mati · tekan untuk hidupkan'}<br>💸 ${esc(costLabel())} · ${(costRT()*100).toFixed(2)}% pergi-balik</small></span><span class="badge ${a.on?'b-ok':''}">${a.on?'ON':'OFF'}</span><span class="muted" style="font-size:20px">›</span></button>`;}
 function openAuto(keep){const a=AUTO();const C=capState();const D=keep&&openAuto._d?openAuto._d:(openAuto._d={...COST()});
@@ -1109,7 +1161,8 @@ function openAuto(keep){const a=AUTO();const C=capState();const D=keep&&openAuto
       ${C?`<div class="grid2" style="align-items:end;margin-top:8px"><div><label>Tambah modal (USD)</label><input id="auCapAdd" inputmode="decimal" placeholder="cth. 500"></div><div><button class="btn sm sec" style="width:100%;min-height:44px" id="auCapAddB">+ Tambah</button></div></div>
         <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm sec" id="auCapReset">↺ Mula semula kiraan</button><button class="btn sm sec" id="auCapOff">Buang had modal</button></div>`:''}</div>
     ${costSecHTML(D)}</div>
-    <button class="btn" style="width:100%;margin-top:14px" id="auDone">Simpan & siap</button>`);
+    <button class="btn sec" style="width:100%;margin-top:14px" onclick="openPerf()">📊 Prestasi lepas sistem · 6 & 12 bulan</button>
+    <button class="btn" style="width:100%;margin-top:8px" id="auDone">Simpan & siap</button>`);
   bindCostSec(D);
   const upd=()=>{save();if(TAB==='robot')rRobot();openAuto(1);};
   $('#auOn').onchange=e=>{a.on=e.target.checked;const n=a.on?autoRun():0;upd();toast(a.on?(n?`🤖 Robot Auto dihidupkan · masuk ${n} coin`:'🤖 Robot Auto dihidupkan'):'Robot Auto dimatikan');};
@@ -1139,7 +1192,7 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
     add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});
   if(add.length){S.manual.push(...add);S.autoIn={at:now,n:add.length,names:add.map(p=>shortName(p.name)),id:add[0].id};save();Promise.allSettled(add.map(p=>getBars(p.code))).then(()=>{manRefresh();if(TAB==='robot')rRobot();});}
   return add.length;}
-function bindAuto(){const b=$('#auBtn');if(b)b.onclick=()=>openAuto();const c=$('#capBtn');if(c)c.onclick=()=>openAuto();}
+function bindAuto(){const b=$('#auBtn');if(b)b.onclick=()=>openAuto();const pb=$('#perfBtn');if(pb)pb.onclick=()=>openPerf();const c=$('#capBtn');if(c)c.onclick=()=>openAuto();}
 function manDelete(id){S.manual=(S.manual||[]).filter(x=>x.id!==id);S.manDel=[...new Set([...(S.manDel||[]),id])].slice(-300);save();}
 function manOpen(code){return (S.manual||[]).find(p=>p.code===code&&!p.closed);}
 function manLevels(code,en){
@@ -1269,6 +1322,7 @@ function rManual(){
     <div class="mstat"><div><b>${op.length}</b><span>Sedang diuji</span></div><div><b class="${opn>=0?'up':'dn'}">${rmS(opn)}</b><span>Untung/rugi kini</span></div><div><b>${cl.length?Math.round(w/cl.length*100)+'%':'-'}</b><span>Ketepatan</span></div><div><b class="${pnl>=0?'up':'dn'}">${cl.length?rmS(pnl):'-'}</b><span>Untung/rugi selesai</span></div></div>${maSplitHTML(M)}${M.length?`<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">${cl.length?'<button class="btn sm sec" id="rsClosed">Kosongkan yang selesai</button>':''}<button class="btn sm sec" id="rsAll">↺ Reset semua</button></div>`:''}</div>`;
   h+=autoCardHTML();
   h+=capCardHTML();
+  h+=`<button class="btn sec perfb" id="perfBtn">📊 Prestasi lepas sistem · 6 & 12 bulan</button>`;
   if(M.length){const cs=cl.slice().sort((a,b)=>a.closed.end.localeCompare(b.closed.end));let cum=0;const first=M.map(p=>p.d).sort()[0];
     const cv=[[first,0],...cs.map(p=>[p.closed.end,cum+=manPnl(p,p.closed.exit)])];if(op.length||cv.length<2)cv.push([today(),cum+opn]);
     h+=`<div class="card eqcard"><h2>Graf untung / rugi</h2><p class="muted" style="margin:0;font-size:12px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1,'eqs')}</div>`;}
@@ -1526,6 +1580,7 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'📊 Prestasi lepas sistem · 6 & 12 bulan':'📊 System past performance · 6 & 12 months',
 'Modal pelaburan':'Investment capital','Belum ditetapkan. Tekan untuk tetapkan modal Robot Auto.':'Not set. Tap to set Auto Robot capital.','Robot Auto ON':'Auto Robot ON','Robot Auto OFF':'Auto Robot OFF','Dalam pasaran':'In market','Baki tersedia':'Available balance','Posisi terbuka':'Open positions','Untung/rugi terbuka':'Open P/L','Untung/rugi selesai':'Closed P/L','Saiz setiap posisi':'Size per position',
 
 'Sudah sampai paras keluar':'Exit level reached','Jatuh ke paras cut loss':'Fell to cut-loss level',

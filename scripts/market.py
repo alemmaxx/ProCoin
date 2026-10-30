@@ -13,7 +13,7 @@ import math
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
 from common import analyze  # noqa: E402
@@ -199,6 +199,8 @@ def main():
     btc_e200 = _ema(btc_cl, 200)
     btc_up = {r[0]: (btc_e200[i] is not None and btc_cl[i] > btc_e200[i]) for i, r in enumerate(btc_rows)}
     SR, pooled = {}, {k: [] for k in USE}
+    PERF = []
+    PERF_FROM = (datetime.strptime(btc_rows[-1][0], "%Y-%m-%d") - timedelta(days=400)).strftime("%Y-%m-%d") if btc_rows else "0000"
     for c, rows in px.items():
         if len(rows) < 260:
             continue
@@ -210,6 +212,13 @@ def main():
             trs, _, pos = ST.run_strategy(k, o, hh, ll, cc, vv, btc_ok=lambda t, d=dates: btc_up.get(d[t], False))
             SR[c][k] = (trs, pos)
             pooled[k] += trs
+            # prestasi lepas (13 bulan) untuk pop up "Prestasi lepas" di app: pulangan KASAR (app tolak kos platform pengguna)
+            for tr in trs:
+                if dates[tr["t"]] >= PERF_FROM and tr["t"] + 1 < len(dates):
+                    PERF.append([c, k, dates[tr["t"] + 1], dates[min(tr["exit"], len(dates) - 1)], round((tr["ret"] + ST.FEE) * 100, 3), tr["days"], 0])
+            if pos and pos["t"] + 1 < len(dates) and dates[pos["t"]] >= PERF_FROM:
+                e = o[pos["t"] + 1] or cc[pos["t"]]
+                PERF.append([c, k, dates[pos["t"] + 1], dates[-1], round((cc[-1] / e - 1) * 100, 3), len(dates) - 1 - pos["t"], 1])
     PS = {k: sstats(v) for k, v in pooled.items()}
     print("Strategi:", {k: (v["n"], v["p"], v["ev"]) for k, v in PS.items()})
 
@@ -315,6 +324,11 @@ def main():
                 regime.run(runs, px, {c for c, v in stocks.items() if v.get("s") == "ok"}, K, asof)
         except Exception as e:
             print("! Eksperimen rejim pasaran gagal:", e)
+    PERF.sort(key=lambda x: (x[2], x[0]))
+    BTCC = [[r[0], r3(float(r[4]))] for r in btc_rows if r[0] >= PERF_FROM]
+    json.dump({"asof": asof, "from": PERF_FROM, "cols": ["c", "k", "in", "out", "gross%", "days", "open"], "fee_bt": ST.FEE,
+               "use": USE, "t": PERF, "btc": BTCC}, open(os.path.join(a.out, "perf.json"), "w"), separators=(",", ":"))
+    print(f"✓ perf.json: {len(PERF)} dagangan sejak {PERF_FROM}")
     json.dump({"meta": meta, "stocks": stocks}, open(os.path.join(a.out, "market.json"), "w"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"✓ market.json: {len(stocks)} coin, {len(px)} berharga, data setakat {asof}")
