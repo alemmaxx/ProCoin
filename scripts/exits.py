@@ -26,7 +26,7 @@ def due():
         return True
 
 
-def run(px, compliant, asof):
+def run(px, universe, asof):
     t0 = time.time()
     base = (BT.TGT_ATR, BT.STP_ATR, BT.H)
     res = {}
@@ -35,7 +35,7 @@ def run(px, compliant, asof):
             BT.TGT_ATR, BT.STP_ATR, BT.H = tg, st, hh
             runs = {}
             for c, rows in px.items():
-                if c not in compliant or len(rows) < 260:
+                if c not in universe or len(rows) < 260:
                     continue
                 o = [float(r[1] or r[4]) for r in rows]; h = [float(r[2] or r[4]) for r in rows]
                 l = [float(r[3] or r[4]) for r in rows]; cc = [float(r[4]) for r in rows]; v = [float(r[5] or 0) for r in rows]
@@ -43,7 +43,7 @@ def run(px, compliant, asof):
             key = f"sasaran {tg}xATR / cut loss {st}xATR / {hh} hari"
             out = {}
             for name, kw in {"semua": dict(max_open=0), "isyarat_kuat": dict(only_a=True, max_open=0)}.items():
-                hres = paper.historical(runs, px, compliant, **kw)
+                hres = paper.historical(runs, px, universe, **kw)
                 if hres:
                     by = {}
                     for t in hres["all"]:

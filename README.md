@@ -1,6 +1,6 @@
 # ProCoin by ProKuiz
 
-App **indicator** untuk coin crypto besar (BTC, ETH, XRP, BNB, SOL dan lain-lain): harga, isyarat teknikal, backtest, Robot ujian maya dan **berita crypto**. Dibina atas konsep ProSyariah, tetapi untuk crypto dan **guna GitHub sahaja** (tiada Firebase, tiada log masuk). Data pengguna kekal dalam telefon pengguna.
+App **indicator** untuk coin crypto besar (BTC, ETH, XRP, BNB, SOL dan lain-lain): harga, isyarat teknikal, backtest, Robot ujian maya dan **berita crypto**. Guna **GitHub sahaja** (tiada pelayan, tiada log masuk). Data pengguna kekal dalam telefon pengguna.
 
 App: https://alemmaxx.github.io/ProCoin/
 
@@ -50,7 +50,9 @@ GitHub sudah emel anda bila robot gagal. Untuk emel tambahan dari Pemantau siste
 
 ## Ciri dalam app
 
-- Skrin utama: coin pilihan, carta (30m hingga tahunan), keadaan pasaran (Bitcoin), Penapis, Naik/Turun, Banding, Ringkasan isyarat, **Berita crypto terkini**, Berita Berpotensi, Champion, Isyarat Pemerhatian, 5 isyarat terkuat, semua coin ikut nilai pasaran.
+- Skrin utama: coin pilihan, carta (30m hingga tahunan), keadaan pasaran (Bitcoin), Penapis, Naik/Turun, Banding, **Isyarat aktif**, **Berita Berpotensi**, **Isyarat Pemerhatian**, watchlist, semua coin ikut nilai pasaran.
+- Tab **News**: semua tajuk berita crypto 7 hari (▲ positif / ▼ negatif / • neutral), tapis ikut nada, coin saya atau coin tertentu.
+- **Berita Berpotensi** hanya berita positif yang kukuh: peristiwa sebenar (kelulusan, aliran masuk dana, penyenaraian, kerjasama, pelancaran), bukan ramalan/andaian ("if", "could", soalan), dan tiada berita negatif pada hari sama. Ini yang digunakan Robot Auto.
 - Setiap coin: Meter ProCoin (isyarat 40% + skor teknikal 40% + nada berita 20%), isyarat & paras harga, rekod backtest, bacaan teknikal, maklumat coin (nilai pasaran, bekalan, ATH), berita, kongsi gambar.
 - Robot: Manual & Auto (ujian maya, modal dibahagi 5). Robot Auto berjalan dalam telefon setiap kali app dibuka.
 - Portfolio: untung/rugi dalam USD, paras sokongan mengekor.
@@ -60,4 +62,3 @@ GitHub sudah emel anda bila robot gagal. Untuk emel tambahan dari Pemantau siste
 
 - **Lesen data**: yfinance (Yahoo Finance) untuk kegunaan peribadi. Untuk edaran awam/komersial, dapatkan penyedia data berlesen.
 - **Peraturan**: isyarat teknikal crypto kepada orang awam boleh dianggap nasihat pelaburan di bawah peraturan SC Malaysia. Dapatkan nasihat undang-undang sebelum mengkomersialkan.
-- **Status syariah**: ProCoin tidak menilai status syariah coin. Tiada senarai rasmi SC untuk coin seperti senarai saham patuh syariah.

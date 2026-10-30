@@ -44,7 +44,7 @@ def main():
         b = pw.chromium.launch()
         pg = b.new_page(viewport={"width": 390, "height": 844})
         pg.on("pageerror", lambda e: errs.append(str(e)))
-        # luar talian: jangan bergantung pada fon / Firebase semasa ujian
+        # luar talian: jangan bergantung pada fon semasa ujian
         pg.route("https://fonts.**", lambda r: r.abort())
         pg.route("https://www.gstatic.com/**", lambda r: r.abort())
         pg.goto(base + "index.html")
@@ -61,7 +61,7 @@ def main():
             pg.wait_for_timeout(300)
             check(pg.locator("#sheetBody").inner_text().strip() != "", f"pop up {fn.split(';')[-1]} dibuka")
             pg.evaluate("closeSheet()")
-        for tab in ["robot", "portfolio", "tetapan", "coin"]:
+        for tab in ["news", "robot", "portfolio", "tetapan", "coin"]:
             pg.evaluate(f"goTab('{tab}')")
             pg.wait_for_timeout(300)
             check(len(pg.inner_text("#main").strip()) > 20, f"tab {tab} dipaparkan")

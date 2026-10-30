@@ -19,7 +19,7 @@ import requests
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 STORE = os.path.join(ROOT, "data", "news.json")
 KEEP_DAYS = 14
-PER_STOCK = 8
+PER_COIN = 8
 
 POS = ["etf approval", "etf approved", "approves", "approved", "inflows", "inflow", "record high", "all-time high", "ath", "surge",
        "surges", "soars", "jumps", "rally", "rallies", "breakout", "bullish", "adoption", "partnership", "integrates", "launches",
@@ -35,9 +35,15 @@ POS_RE = re.compile(r"\b(" + "|".join(re.escape(k) for k in POS) + r")\b")
 NEG_RE = re.compile(r"\b(" + "|".join(re.escape(k) for k in NEG) + r")\b")
 
 
+# Tajuk spekulatif (andaian, ramalan, soalan) tidak dikira positif — hanya peristiwa sebenar.
+SPEC_RE = re.compile(r"\b(if|could|may|might|would|should|can|will|predict\w*|forecast\w*|expect\w*|eyes?|eyeing|target\w*|aims?|poised|"
+                     r"set to|likely|possibl\w*|potential\w*|hopes?|rumou?r\w*|reportedly|analysts?|says?|said|why|how|what|when|whether|"
+                     r"outlook|scenario|bull case|bear case|opinion|chance|odds|watch)\b|\?|price prediction|to the moon|\d+x\b", re.I)
+
+
 def tone(title):
     t = title.lower()
-    p = bool(POS_RE.search(t))
+    p = bool(POS_RE.search(t)) and not SPEC_RE.search(title)
     q = bool(NEG_RE.search(t))
     return "+" if p and not q else "-" if q and not p else "0"
 
@@ -74,7 +80,7 @@ def fetch(code, name, q):
             continue
         seen.add(k)
         res.append(x)
-    return res[:PER_STOCK]
+    return res[:PER_COIN]
 
 
 def main():
@@ -96,7 +102,7 @@ def main():
         try:
             got = fetch(c, nm, coins[c].get("q") or nm)
             merged = got + [x for x in items.get(c, []) if x["t"] not in {g["t"] for g in got}]
-            items[c] = sorted(merged, key=lambda x: x["d"], reverse=True)[:PER_STOCK]
+            items[c] = sorted(merged, key=lambda x: x["d"], reverse=True)[:PER_COIN]
             ok += 1
         except Exception as e:
             fail += 1

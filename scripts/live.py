@@ -30,7 +30,7 @@ def main():
     import requests
     import yfinance as yf
 
-    # senarai kaunter & harga tutup semalam dari data harian yang sudah diterbitkan
+    # senarai coin & harga tutup semalam dari data harian yang sudah diterbitkan
     M = None
     for url in ["https://alemmaxx.github.io/ProCoin/data/market.json", "https://raw.githubusercontent.com/alemmaxx/ProCoin/main/data/market-meta.json"]:
         try:

@@ -74,14 +74,14 @@ def _liquid(rows, t):
     return sum(float(r[5] or 0) for r in w) / len(w) >= MIN_VALUE  # volum crypto Yahoo sudah dalam USD
 
 
-def historical(runs, px, compliant, min_score=0, only_a=False, setups=None, max_open=None, days=None):
+def historical(runs, px, universe, min_score=0, only_a=False, setups=None, max_open=None, days=None):
     """Simulasi walk-forward 5 terkuat sepanjang HIST_DAYS lalu.
     setups: hadkan jenis isyarat (termasuk yang dihentikan, untuk eksperimen); max_open=0 → ambil semua isyarat."""
     max_open = MAX_OPEN if max_open is None else max_open
     days = days or HIST_DAYS
     events = []
     for code, R in runs.items():
-        if code not in compliant:
+        if code not in universe:
             continue
         dates = [r[0] for r in px[code]]
         for k, trs in R["trades"].items():
@@ -194,11 +194,11 @@ def live(prices, stocks, asof):
 
 
 def build(runs, px, stocks, asof, out_dir):
-    compliant = {c for c, v in stocks.items() if v.get("s") == "ok"}
-    hist = historical(runs, px, compliant)
-    hist3 = historical(runs, px, compliant, min_score=3)
+    universe = {c for c, v in stocks.items() if v.get("s") == "ok"}
+    hist = historical(runs, px, universe)
+    hist3 = historical(runs, px, universe, min_score=3)
     # Champion = Isyarat Kuat + skor teknikal Kuat (4/5 ke atas) pada hari isyarat
-    champ = historical(runs, px, compliant, min_score=4, only_a=True)
+    champ = historical(runs, px, universe, min_score=4, only_a=True)
     lv = live(px, stocks, asof)
     # Eksperimen 3 tahun: setiap jenis isyarat diuji sendiri (semua isyarat diambil), dan beberapa penapis
     exp = {}
@@ -223,7 +223,7 @@ def build(runs, px, stocks, asof, out_dir):
     }
     for name, kw in variants.items():
         try:
-            h = historical(runs, px, compliant, **kw)
+            h = historical(runs, px, universe, **kw)
             exp[name] = {"summary": h["summary"], "years": yearly(h)} if h else None
         except Exception as e:
             exp[name] = {"error": str(e)}

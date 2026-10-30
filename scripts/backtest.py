@@ -1,6 +1,6 @@
 """Enjin backtest ProCoin (crypto, pasaran 24/7 — "hari" = hari kalendar UTC).
 
-Untuk setiap saham, cari setiap kali sesuatu "persediaan beli" berlaku dalam sejarah, kemudian
+Untuk setiap coin, cari setiap kali sesuatu "persediaan beli" berlaku dalam sejarah, kemudian
 simulasi dagangan: beli pada harga buka hari esoknya, jual bila
   (a) capai SASARAN  = harga beli + 2 x ATR14   -> MENANG
   (b) jatuh ke HAD RUGI = harga beli - 1.25 x ATR14 -> KALAH

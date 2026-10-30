@@ -33,7 +33,7 @@ def states(K):
     return out
 
 
-def run(runs, px, compliant, K, asof):
+def run(runs, px, universe, K, asof):
     st = states(K)
     if not st:
         return
@@ -43,7 +43,7 @@ def run(runs, px, compliant, K, asof):
         return st[prev[-1]] if prev else None
     res = {}
     for name, kw in {"semua": dict(max_open=0), "isyarat_kuat": dict(only_a=True, max_open=0)}.items():
-        h = paper.historical(runs, px, compliant, **kw)
+        h = paper.historical(runs, px, universe, **kw)
         if not h:
             continue
         by = {"naik": [], "datar": [], "turun": []}
