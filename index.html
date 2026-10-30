@@ -248,7 +248,7 @@ main>.card,main>.alert,main>.grid2,main>.disc,main>.pad,.search,.results{margin-
 @media (min-width:900px){.t5{grid-template-columns:1fr 1fr}}
 .rbend{font-size:12px;color:var(--gold);font-weight:600}
 .nmood{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}.nmood>div{background:var(--card2);border-radius:12px;padding:10px;text-align:center}.nmood b{display:block;font-size:22px}.nmood small{color:var(--muted);font-size:12px}
-.nfil{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.nfil .btn{padding:9px 4px;font-size:12.5px}
+.nfil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.nfil.gl3{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:6px}.nfil .btn{padding:9px 4px;font-size:12.5px}
 .nlist{padding-top:4px;padding-bottom:4px}.nitem{padding:12px 0;border-bottom:1px solid var(--line)}.nitem:last-child{border-bottom:0}
 .nhd{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:4px}.nhd .ntone{width:auto}
 .ncoin{border:1px solid var(--line);background:var(--card2);color:var(--ink);border-radius:999px;padding:2px 10px;font:inherit;font-weight:700;font-size:12px;cursor:pointer}
@@ -402,6 +402,19 @@ body.ovl{overflow:hidden}
 .hctip b{font-size:13px;color:var(--gold)}
 canvas#cv{touch-action:pan-y;cursor:crosshair}
 @media (min-width:820px){.hero .hc{z-index:0}.hero>*:not(.hc):not(.shade){position:relative;z-index:1}}
+/* ProCoin: rel kad dipaparkan penuh dalam grid (tiada skrol ke tepi) */
+.rail{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;overflow:visible;scroll-snap-type:none;padding-bottom:4px}
+.rail .poster,.rail .poster.wide{width:auto!important;aspect-ratio:3/4}
+.rail .poster .pc{font-size:24px!important;letter-spacing:-1px;right:44px}
+.rail .poster svg{top:44%;height:32px}
+.rail .poster .pn,.rail .poster .pn.up2{-webkit-line-clamp:1;bottom:27px;font-size:12px}
+.rail .poster .pb,.rail .poster .pb.up2{bottom:9px}
+.rail .poster .pgr{top:40px}
+.rail .poster .ppf{display:none}
+.rail .poster .pgr{transform:scale(.9);transform-origin:left top}
+.hero .stats small,.hero .stats>div{white-space:nowrap}
+.btcnews{display:flex;gap:8px;align-items:flex-start;margin:8px 2px 0;color:var(--ink);text-decoration:none;font-size:13px;line-height:1.35}
+.btcnews small{display:inline}
 </style>
 </head>
 <body translate="no">
@@ -411,8 +424,8 @@ canvas#cv{touch-action:pan-y;cursor:crosshair}
 <nav id="nav">
   <button data-tab="coin" class="on"><span class="ic">🪙</span>Coin</button>
   <button data-tab="news"><span class="ic">📰</span>News</button>
+  <button data-tab="gl"><span class="ic">🔥</span>G &amp; L</button>
   <button data-tab="robot"><span class="ic">🤖</span>Robot</button>
-  <button data-tab="portfolio"><span class="ic">💼</span>Portfolio</button>
   <button data-tab="tetapan"><span class="ic">⚙️</span>Tetapan</button>
 </nav>
 <div class="sheet" id="sheet"><div class="panel" id="sheetBody"></div></div>
@@ -780,8 +793,10 @@ function dataStatusHTML(){const asof=S.market.meta.asof,now=new Date(),t=today()
 /* ===== PASARAN CRYPTO (ikut Bitcoin) ===== */
 function klciWord(u){return u===1?'Menaik':u===-1?'Menurun':'Mendatar';}
 function klciHTML(){const K=S.market&&S.market.meta&&S.market.meta.klci;if(!K)return '';
-  const cls=K.ch>=0?'up':'dn';
-  return `<div class="pad" style="margin-top:12px"><button class="smbtn klb" onclick="openKlci()"><span>📊</span><span><b>Bitcoin $${K.c.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})} <span class="${cls}">${K.ch>0?'+':''}${K.ch}%</span></b><small>Pasaran crypto: ${klciWord(K.up)}${K.m1!=null?` · 1 bulan ${K.m1>0?'+':''}${K.m1}%`:''}</small></span><span class="go">Carta</span></button></div>`;}
+  const l=livePx('BTC'),p=l?l.p:K.c,ch=l?l.ch:K.ch,cls=ch>=0?'up':'dn';
+  const N=(newsFor('BTC')||[]).filter(x=>x.d>=isoD(new Date(Date.now()-864e5)))[0];
+  return `<div class="pad" style="margin-top:12px"><button class="smbtn klb" onclick="openKlci()"><span>📊</span><span><b>Bitcoin $${p.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})} <span class="${cls}">${ch>0?'+':''}${(+ch).toFixed(2)}%</span></b><small>Pasaran crypto: ${klciWord(K.up)}${K.m1!=null?` · 1 bulan ${K.m1>0?'+':''}${K.m1}%`:''}${l?` · ${l.t.slice(11,16)}`:''}</small></span><span class="go">Carta</span></button>
+   ${N?`<a class="btcnews" href="${esc(N.u)}" target="_blank" rel="noopener">${toneIc(N.x)}<span>${esc(N.t)}<small class="muted"> · ${fmtD(N.d)}${N.s?' · '+esc(N.s):''} ↗</small></span></a>`:''}</div>`;}
 let KLCI=null,KLR=365;
 async function openKlci(){const K=S.market.meta.klci;
   if(!KLCI){openSheet('<p class="muted">Memuatkan carta Bitcoin…</p>');try{const r=await dfetch('klci.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(r.ok)KLCI=await r.json();}catch(e){}}
@@ -866,8 +881,8 @@ const HOW=[
   'Hanya coin crypto besar mengikut nilai pasaran (contohnya BTC, ETH, XRP, BNB, SOL). Stablecoin seperti USDT dan USDC tidak dimasukkan kerana harganya tetap. Harga dalam USD.',
   'Coins tracked','Only large crypto coins by market value (for example BTC, ETH, XRP, BNB, SOL). Stablecoins such as USDT and USDC are not included because their price is fixed. Prices in USD.'],
  ['💾','Data anda',
-  'Watchlist, Robot dan Portfolio disimpan dalam telefon ini sahaja (tiada akaun, tiada pelayan). Gunakan Eksport / Import di Tetapan untuk pindah ke telefon lain.',
-  'Your data','Watchlist, Robot and Portfolio are stored on this phone only (no account, no server). Use Export / Import in Settings to move to another phone.'],
+  'Robot dan tetapan disimpan dalam telefon ini sahaja (tiada akaun, tiada pelayan). Guna Sandaran data di Tetapan untuk pindah ke telefon lain.',
+  'Your data','Robot and settings are stored on this phone only (no account, no server). Use Data backup in Settings to move to another phone.'],
  ['⚠️','Jika sistem bermasalah',
   'Sistem dipantau setiap jam. Jika ada gangguan, jalur amaran muncul di atas skrin dan hilang sendiri bila pulih. Data mungkin lewat semasa gangguan.',
   'If the system has a problem','The system is monitored every hour. If there is a disruption, a warning bar appears at the top of the screen and disappears when it recovers. Data may be delayed during a disruption.'],
@@ -876,76 +891,23 @@ const HOW=[
   'Important','ProCoin is an indicator app. Signals are readings based on price history, not buy or sell recommendations, and not a guarantee of profit. Crypto is very volatile; you can lose all your capital.']];
 function howHTML(){const en=S.settings.lang==='en';return HOW.map(([ic,qb,ab,qe,ae])=>`<details class="how"><summary>${ic} ${en?qe:qb}</summary><p>${en?ae:ab}</p></details>`).join('');}
 function openHow(){openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">📘 ${S.settings.lang==='en'?'How the app works':'Cara app berjalan'}</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div><div class="notr" style="margin-top:8px">${howHTML()}</div>`);}
-/* ===== ALAT: Penapis, Kalendar, Banding ===== */
-function toolsHTML(){if(!S.market)return '';
-  return `<div class="pad tools3" style="margin-top:12px"><button onclick="openScreener()"><span>🔎</span>Penapis</button><button onclick="openCal()"><span>🔥</span>Naik/Turun</button><button onclick="openCompare()"><span>⚖️</span>Banding</button></div>`;}
+/* ===== SENARAI COIN ===== */
 function okCodes(){return Object.entries(S.market.stocks).filter(([c,v])=>v.s==='ok'&&v.c!=null).map(([c])=>c);}
 function kindOf(c){return 'coin';}
-const secName=x=>S.settings.lang==='en'?x:(SEC_BM[x]||x);
-const SEC_BM={'Industrials':'Perindustrian','Consumer Cyclical':'Pengguna (kitaran)','Technology':'Teknologi','Basic Materials':'Bahan asas','Consumer Defensive':'Pengguna (asas)','Real Estate':'Hartanah','Healthcare':'Kesihatan','Energy':'Tenaga','Communication Services':'Telekomunikasi','Utilities':'Utiliti','Financial Services':'Kewangan'};
-let SCR={top:'',rsi:'',ath:'',sig:false,sort:'meter'};
-function openScreener(){const F=(S.fund&&S.fund.items)||{};
-  let L=okCodes().filter(c=>{const f=F[c]||{},m=mk(c);
-    if(SCR.top&&!(f.rk&&f.rk<=+SCR.top))return false;
-    if(SCR.rsi==='os'&&!(m.r!=null&&m.r<30))return false;
-    if(SCR.rsi==='lo'&&!(m.r!=null&&m.r<45))return false;
-    if(SCR.rsi==='ob'&&!(m.r!=null&&m.r>70))return false;
-    if(SCR.ath&&!(f.dath!=null&&f.dath<=-SCR.ath))return false;
-    if(SCR.sig&&!curSig(c))return false;return true;});
-  const key={meter:c=>-((meterOf(c)||{}).v||0),mc:c=>((F[c]||{}).rk||999),ch:c=>-(mk(c).ch||0),ath:c=>((F[c]||{}).dath??0),rsi:c=>(mk(c).r??50)}[SCR.sort];
-  L.sort((a,b)=>key(a)-key(b));const n=L.length;
-  const opt=(v,l,cur)=>`<option value="${v}"${String(cur)===String(v)?' selected':''}>${l}</option>`;
-  openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">🔎 Penapis coin</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>
-   <div class="grid2" style="margin-top:8px">
-    <div><label>Nilai pasaran</label><select id="scK">${opt('','Semua coin',SCR.top)}${opt('5','5 terbesar',SCR.top)}${opt('10','10 terbesar',SCR.top)}</select></div>
-    <div><label>RSI</label><select id="scS">${opt('','Semua',SCR.rsi)}${opt('os','Lebih jualan (< 30)',SCR.rsi)}${opt('lo','Lemah (< 45)',SCR.rsi)}${opt('ob','Lebih belian (> 70)',SCR.rsi)}</select></div>
-    <div><label>Jarak dari ATH</label><select id="scP">${opt('','Tiada had',SCR.ath)}${[20,40,60,80].map(x=>opt(x,'Turun ≥ '+x+'%',SCR.ath)).join('')}</select></div>
-    <div><label>Susun ikut</label><select id="scO">${opt('meter','Meter tertinggi',SCR.sort)}${opt('mc','Nilai pasaran terbesar',SCR.sort)}${opt('ch','Naik paling banyak hari ini',SCR.sort)}${opt('ath','Paling jauh dari ATH',SCR.sort)}${opt('rsi','RSI terendah',SCR.sort)}</select></div>
-    <div style="grid-column:1/-1"><label class="toggle" style="padding:6px 0"><span>Coin yang ada isyarat sahaja</span><input type="checkbox" id="scG"${SCR.sig?' checked':''}></label></div></div>
-   <p class="muted" style="margin:10px 0 4px;font-size:13px">${n} coin</p>
-   <div class="sclist">${L.map(c=>{const m=mk(c),f=F[c]||{},M=meterOf(c);return `<button class="scr" data-sc="${esc(c)}"><span class="scn"><b>${esc(shortName(m.n))}</b><small>${esc(c)}${f.rk?' · #'+f.rk:''}</small></span><span class="scv"><b>${px(m.c)}</b><small class="${(m.ch||0)>=0?'up':'dn'}">${m.ch>0?'+':''}${(m.ch||0).toFixed(2)}%</small></span><span class="scm"><small>${m.r!=null?'RSI '+m.r.toFixed(0):''}${f.dath!=null?' · ATH '+f.dath+'%':''}</small>${M?`<b style="color:${M.col}">${M.v}</b>`:''}</span></button>`;}).join('')||'<p class="muted">Tiada coin sepadan.</p>'}</div>
-   <div class="disc">Data daripada Yahoo Finance (indikatif). Ini alat tapisan, bukan cadangan beli.</div>`);
-  const on=(id,k,f)=>{const e=$(id);if(e)e.onchange=()=>{SCR[k]=f?f(e):e.value;openScreener();};};
-  on('#scK','top');on('#scS','rsi');on('#scP','ath');on('#scO','sort');on('#scG','sig',e=>e.checked);
-  document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>stockSheet(b.dataset.sc,nameOf(b.dataset.sc)));}
-/* Naik / Turun: coin paling banyak naik & turun (hari ini, 7 hari, 30 hari) */
+/* ================= TAB: G & L (Gainers & Losers) ================= */
 let MOV=1;
-function openCal(){const ret=(c,n)=>{const m=mk(c);if(n===1){const l=livePx(c);return l?l.ch:m.ch;}const p=m.sp||[];return p.length>n?((p[p.length-1]/p[p.length-1-n]-1)*100):null;};
+function rGL(){const ret=(c,n)=>{const m=mk(c);if(n===1){const l=livePx(c);return l?l.ch:m.ch;}const p=m.sp||[];return p.length>n?((nowPx(c)/p[p.length-1-n]-1)*100):null;};
+  if(!S.market){$('#main').innerHTML='<div class="card"><p class="muted" style="margin:0">Data sedang dimuat.</p></div>';return;}
   const L=okCodes().map(c=>({c,v:ret(c,MOV)})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
-  const row=x=>{const m=mk(x.c);return `<button class="scr" data-sc="${esc(x.c)}"><span class="scn"><b>${esc(shortName(m.n))}</b><small>${esc(x.c)}</small></span><span class="scv"><b>${px(nowPx(x.c))}</b></span><span class="scm" style="text-align:right"><b class="${x.v>=0?'up':'dn'}">${x.v>0?'+':''}${x.v.toFixed(2)}%</b></span></button>`;};
-  const up=L.filter(x=>x.v>0).slice(0,8),dn=L.filter(x=>x.v<0).reverse().slice(0,8);
-  openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">🔥 Naik & turun</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>
-   <div class="tfs" style="display:flex;gap:6px;margin:8px 0">${[[1,'Hari ini'],[7,'7 hari'],[30,'30 hari']].map(([n,l])=>`<button class="btn sm ${n===MOV?'gold':'sec'}" data-mv="${n}">${l}</button>`).join('')}</div>
-   <h3 style="margin:10px 0 6px">▲ Naik paling banyak</h3><div class="sclist">${up.map(row).join('')||'<p class="muted">Tiada coin naik.</p>'}</div>
-   <h3 style="margin:14px 0 6px">▼ Turun paling banyak</h3><div class="sclist">${dn.map(row).join('')||'<p class="muted">Tiada coin turun.</p>'}</div>
-   <div class="disc">Perubahan harga sahaja, bukan cadangan beli atau jual.</div>`);
-  document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{MOV=+b.dataset.mv;openCal();});
-  document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>stockSheet(b.dataset.sc,nameOf(b.dataset.sc)));}
-let CMP=[];
-function openCompare(code){if(code&&!CMP.includes(code))CMP=[...CMP,code].slice(-2);
-  if(CMP.length<2){openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">⚖️ Banding 2 coin</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>
-    <p class="muted" style="font-size:13px;margin:6px 0">${CMP.length?`Dipilih: <b>${esc(shortName(nameOf(CMP[0])))}</b>. Pilih coin kedua.`:'Pilih coin pertama.'}</p>
-    <div class="search" style="margin:0"><input id="cmpQ" placeholder="Cari kod atau nama coin" aria-label="Cari coin"></div><div class="sclist" id="cmpR"></div>`);
-    const q=$('#cmpQ'),R=$('#cmpR');const draw=()=>{const v=q.value.trim().toLowerCase();const L=okCodes().filter(c=>!CMP.includes(c)&&(!v||c.toLowerCase().includes(v)||String(nameOf(c)).toLowerCase().includes(v))).slice(0,25);
-      R.innerHTML=L.map(c=>`<button class="scr" data-cp="${esc(c)}"><span class="scn"><b>${esc(shortName(nameOf(c)))}</b><small>${esc(c)}</small></span><span class="scv"><b>${px(mk(c).c)}</b></span></button>`).join('');
-      R.querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>openCompare(b.dataset.cp));};
-    q.oninput=draw;draw();return;}
-  const [a,b]=CMP,F=(S.fund&&S.fund.items)||{};const A=mk(a),B=mk(b),fa=F[a]||{},fb=F[b]||{},Ma=meterOf(a),Mb=meterOf(b),sa=curSig(a),sb=curSig(b);
-  const ret=(m,n)=>{const p=m.sp||[];return p.length>n?((p[p.length-1]/p[p.length-1-n]-1)*100):null;};
-  const f1=v=>v==null?'-':(v>0?'+':'')+v.toFixed(1)+'%';
-  const rows=[['Harga',px(A.c),px(B.c)],['Hari ini',f1(A.ch),f1(B.ch)],['30 hari',f1(ret(A,30)),f1(ret(B,30))],['Meter',Ma?Ma.v+' · '+Ma.lbl:'-',Mb?Mb.v+' · '+Mb.lbl:'-'],
-    ['Isyarat',sa?(rateSignal(sa).g==='A'?'🟢 Kuat':'Ada'):'Tiada',sb?(rateSignal(sb).g==='A'?'🟢 Kuat':'Ada'):'Tiada'],['RSI',A.r!=null?A.r.toFixed(0):'-',B.r!=null?B.r.toFixed(0):'-'],
-    ['Kedudukan',fa.rk?'#'+fa.rk:'-',fb.rk?'#'+fb.rk:'-'],['Nilai pasaran',fa.mc?bigUSD(fa.mc):'-',fb.mc?bigUSD(fb.mc):'-'],['1 tahun',f1(fa.y1),f1(fb.y1)],['Dari ATH',f1(fa.dath),f1(fb.dath)],['Volum 24 jam',fa.v24?bigUSD(fa.v24):'-',fb.v24?bigUSD(fb.v24):'-']];
-  const spark=(m,col)=>{const p=(m.sp||[]).slice(-40);if(p.length<2)return '';const b0=p[0];return p.map(x=>x/b0*100);};
-  const pa=spark(A),pb=spark(B);let svg='';if(pa&&pb){const all=[...pa,...pb],lo=Math.min(...all),hi=Math.max(...all),sp=(hi-lo)||1,W=320,H=110;
-    const line=(p,col)=>`<polyline fill="none" stroke="${col}" stroke-width="2" points="${p.map((v,i)=>`${(i/(p.length-1)*W).toFixed(1)},${(H-6-(v-lo)/sp*(H-12)).toFixed(1)}`).join(' ')}"/>`;
-    svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin:6px 0">${line(pa,'var(--gold)')}${line(pb,'var(--blue)')}</svg><p class="muted" style="font-size:12px;margin:0 0 8px">Pergerakan 40 hari (mula = 100). <span style="color:var(--gold)">■</span> ${esc(shortName(A.n))} <span style="color:var(--blue)">■</span> ${esc(shortName(B.n))}</p>`;}
-  openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">⚖️ Banding</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>${svg}
-   <table class="cmpt"><tr><th></th><th><span style="color:var(--gold)">■</span> ${esc(shortName(A.n))}<small>${esc(a)}</small></th><th><span style="color:var(--blue)">■</span> ${esc(shortName(B.n))}<small>${esc(b)}</small></th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table>
-   <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm sec" id="cmpN">Tukar coin</button><button class="btn sm sec" data-sc="${esc(a)}">Buka ${esc(a)}</button><button class="btn sm sec" data-sc="${esc(b)}">Buka ${esc(b)}</button></div>
-   <div class="disc">Perbandingan maklumat sahaja, bukan cadangan beli atau jual.</div>`);
-  $('#cmpN').onclick=()=>{CMP=[];openCompare();};
-  document.querySelectorAll('[data-sc]').forEach(x=>x.onclick=()=>stockSheet(x.dataset.sc,nameOf(x.dataset.sc)));}
+  const row=x=>{const m=mk(x.c);return `<button class="scr" data-sc="${esc(x.c)}"><span class="scn"><b>${esc(shortName(m.n))}</b><small>${esc(x.c)}</small></span><span class="scv"><b>${px(nowPx(x.c))}</b></span><span class="scm"><b class="${x.v>=0?'up':'dn'}">${x.v>0?'+':''}${x.v.toFixed(2)}%</b></span></button>`;};
+  const up=L.filter(x=>x.v>0),dn=L.filter(x=>x.v<0).reverse();
+  $('#main').innerHTML=`<div class="card"><h2>🔥 Gainers & Losers</h2><div class="nfil gl3">${[[1,'Hari ini'],[7,'7 hari'],[30,'30 hari']].map(([n,l])=>`<button class="btn sm ${n===MOV?'gold':'sec'}" data-mv="${n}">${l}</button>`).join('')}</div>
+   <p class="muted" style="margin:8px 0 0;font-size:12.5px">${MOV===1?'Berbanding harga tutup harian terakhir (8 pagi)':`Berbanding ${MOV} hari lalu`}${LIVE_SRC==='cg'?' · harga masa nyata':''}</p></div>
+   <div class="card"><h3 style="margin:0 0 4px">▲ Gainers <small class="muted">${up.length} coin</small></h3><div class="sclist">${up.map(row).join('')||'<p class="muted" style="margin:6px 0">Tiada coin naik.</p>'}</div></div>
+   <div class="card"><h3 style="margin:0 0 4px">▼ Losers <small class="muted">${dn.length} coin</small></h3><div class="sclist">${dn.map(row).join('')||'<p class="muted" style="margin:6px 0">Tiada coin turun.</p>'}</div></div>
+   <p class="disc" style="margin:0 var(--gut) 16px">Perubahan harga sahaja, bukan cadangan beli atau jual.</p>`;
+  document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{MOV=+b.dataset.mv;rGL();});
+  document.querySelectorAll('#main [data-sc]').forEach(b=>b.onclick=()=>stockSheet(b.dataset.sc,nameOf(b.dataset.sc)));}
 /* Berita kukuh: nada positif, BUKAN spekulasi ("if", "could", ramalan, soalan) dan ada peristiwa sebenar
    (kelulusan, aliran masuk dana, paras tertinggi, penyenaraian, kerjasama, pelancaran, pembelian ...). */
 const NEWS_SPEC=/\b(if|could|may|might|would|should|can|will|predict\w*|forecast\w*|expect\w*|eyes?|eyeing|target\w*|aims?|poised|set to|likely|possibl\w*|potential\w*|hopes?|rumou?r\w*|reportedly|analysts?|says?|said|why|how|what|when|whether|outlook|scenario|bull case|bear case|opinion|chance|odds|watch)\b|\?|price prediction|to the moon|\d+x\b/i;
@@ -971,7 +933,7 @@ function rNews(){const L0=allNews(7);const M=newsMood(L0);const mine=new Set([..
     <div class="nmood"><div><b class="up">${M.p}</b><small>▲ positif</small></div><div><b class="dn">${M.n}</b><small>▼ negatif</small></div><div><b>${M.o}</b><small>• neutral</small></div></div>
     <p class="muted" style="margin:8px 0 0;font-size:12.5px">7 hari lepas · dikemas kini setiap 2 jam${S.news&&S.news.asof?` · terakhir ${fmtD(S.news.asof)}`:''}</p></div>`;
   h+=`<div class="pad" style="margin-top:0"><button class="smbtn${P.length?'':' off'}" onclick="openPotNews()"><span>📰</span><span><b>Berita Berpotensi</b><small>${P.length?`${P.length} coin dengan berita positif yang kukuh hari ini`:'Tiada berita positif yang kukuh hari ini'}</small></span>${P.length?'<span class="go">Buka</span>':''}</button></div>`;
-  h+=`<div class="card"><div class="nfil">${[['all','Semua'],['+','▲ Positif'],['-','▼ Negatif'],['mine','⭐ Coin saya']].map(([k,l])=>`<button class="btn sm ${k===NWF?'gold':'sec'}" data-nf="${k}">${l}</button>`).join('')}</div>
+  h+=`<div class="card"><div class="nfil">${[['all','Semua'],['+','▲ Positif'],['-','▼ Negatif']].map(([k,l])=>`<button class="btn sm ${k===NWF?'gold':'sec'}" data-nf="${k}">${l}</button>`).join('')}</div>
     <label style="margin-top:10px">Coin</label><select id="nwc"><option value="">Semua coin</option>${codes.map(c=>`<option value="${esc(c)}"${c===NWC?' selected':''}>${esc(c)} · ${esc(shortName(nameOf(c)))}</option>`).join('')}</select></div>`;
   h+=`<div class="card nlist">${L.slice(0,100).map(x=>`<div class="nitem"><div class="nhd">${toneIc(x.x)}<button class="ncoin" data-sc="${esc(x.code)}">${esc(x.code)}</button><span class="muted">${fmtD(x.d)}${x.s?' · '+esc(x.s):''}</span></div><a class="ntitle" href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)} <span class="muted">↗</span></a></div>`).join('')||`<p class="muted" style="margin:0">${S.news?'Tiada berita untuk pilihan ini.':'Berita sedang dimuat.'}</p>`}</div>
     <p class="disc" style="margin:0 var(--gut) 16px">Nada berita dikira dari kata kunci tajuk sahaja (▲ positif, ▼ negatif, • neutral). Ini bukan cadangan beli atau jual.</p>`;
@@ -987,7 +949,7 @@ function openPotNews(){const L=potNews();if(!L.length)return toast('Tiada berita
     ${L.map(x=>`<div class="pnr"><button class="smr" data-sc="${esc(x.code)}" style="border:0;padding-bottom:2px"><span><b>${esc(shortName(x.name))}</b> <span class="code">${esc(x.code)}</span></span><span class="smt">${x.k>1?`<small class="muted">${x.k} berita</small>`:''}</span></button>
       <a class="pnl" href="${esc(x.n.u)}" target="_blank" rel="noopener"><span class="ntone tp">▲</span><span>${esc(x.n.t)}<small class="muted"> · ${fmtD(x.n.d)}${x.n.s?' · '+esc(x.n.s):''} · Baca ↗</small></span></a>
       <div class="row pnb"><button class="btn sm sec" data-sc="${esc(x.code)}">📊 Buka coin</button><button class="btn sm gold" data-an="${esc(x.code)}">📝 Analisa</button><a class="btn sm sec" href="${esc(x.n.u)}" target="_blank" rel="noopener">📰 Baca berita</a></div></div>`).join('')}
-    <p class="disc" style="margin-top:12px">Penapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.</p></div>`;
+    <p class="disc" style="margin-top:12px">Ditapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.</p></div>`;
   document.body.appendChild(d);
   const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};
   d.onclick=e=>{const an=e.target.closest('[data-an]');if(an){close();openAnalysis(an.dataset.an);return;}const b=e.target.closest('[data-sc]');if(b){close();stockSheet(b.dataset.sc,nameOf(b.dataset.sc));return;}if(e.target===d)close();};$('#helpX').onclick=close;}
@@ -1007,23 +969,6 @@ function openObs(){const L=topSignals(60,'obs');if(!L.length)return toast('Tiada
   document.body.appendChild(d);
   const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};
   d.onclick=e=>{const b=e.target.closest('[data-sc]');if(b){close();stockSheet(b.dataset.sc,nameOf(b.dataset.sc));return;}if(e.target===d)close();};$('#helpX').onclick=close;}
-async function openAccuracy(){
-  const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
-  d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true"><div><div class="shd-top"><h2 style="margin:0">📊 Ketepatan isyarat</h2><button class="xbtn" id="helpX" aria-label="Tutup">✕</button></div></div><div id="acBody"><p class="muted">Memuatkan…</p></div></div>`;
-  document.body.appendChild(d);const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};
-  d.onclick=e=>{if(e.target===d)close();};$('#helpX').onclick=close;
-  let X=null;try{const r=await dfetch('paper-experiments.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(r.ok)X=await r.json();}catch(e){}
-  const B=$('#acBody');if(!B)return;if(!X||!X.variants){B.innerHTML='<p class="muted">Keputusan ujian belum tersedia.</p>';return;}
-  const V=X.variants,row=(l,v,b)=>{const s=v&&v.summary;if(!s||!s.n)return '';return `<tr${b?' class="hl"':''}><td>${l}</td><td>${s.n}</td><td>${s.win}%</td><td class="${s.avg>=0?'up':'dn'}">${s.avg>0?'+':''}${s.avg}%</td></tr>`;};
-  const A=V.gred_A_sahaja;
-  B.innerHTML=`<p class="muted" style="margin-top:0">Robot mengulang setiap hari dalam 3 tahun lepas, guna hanya maklumat yang ada pada hari itu, dan mencatat sama ada setiap isyarat sampai sasaran atau cut loss dahulu. Kos dagangan 0.3% diambil kira.</p>
-   <table class="actb"><tr><th>Isyarat</th><th>Kali</th><th>Tepat</th><th>Purata</th></tr>
-   ${row('⭐ Isyarat Kuat sahaja',A,1)}${row('Semua isyarat',V.semua_isyarat)}${row('Momentum MACD',V.mc_sahaja)}${row('Lantunan lebih jualan',V.os_sahaja)}${row('Koreksi dalam trend menaik',V.pb_sahaja)}${row('Golden cross',V.gc_sahaja)}</table>
-   ${A&&A.years?`<h3>Isyarat Kuat ikut tahun</h3><table class="actb"><tr><th>Tahun</th><th>Kali</th><th>Tepat</th><th>Purata</th></tr>${Object.entries(A.years).filter(([y,s])=>s.n>=5).map(([y,s])=>`<tr><td>${y}</td><td>${s.n}</td><td>${s.win}%</td><td class="${s.avg>=0?'up':'dn'}">${s.avg>0?'+':''}${s.avg}%</td></tr>`).join('')}</table>`:''}
-   <div class="verd"><b>Maksudnya</b><p style="margin:4px 0 0">"Purata" ialah untung atau rugi purata setiap kali isyarat diikut. Hanya Isyarat Kuat yang positif secara keseluruhan, dan untungnya kecil. Sebab itu senarai utama hanya menunjukkan Isyarat Kuat.</p></div>
-   <p class="disc">Keputusan lampau tidak menjamin keputusan masa depan. Dikemas kini ${fmtD(X.asof)}.</p>`;
-}
-
 /* Jejak 5 isyarat terkuat: rekod bila masuk, kemudian pantau paras atas/bawah & tempoh */
 function updateTop5Track(){
   const M=S.market;if(!M)return;const asof=M.meta.asof;S.t5=S.t5||{};
@@ -1141,7 +1086,7 @@ function openManual(code){
   else $('#mGo').onclick=()=>{const st=num($('#mS').value),en=num($('#mE').value),tg=num($('#mT').value),sl=num($('#mL').value),dt=$('#mD').value;
     if(!(st>0&&en>0))return toast('Masukkan nilai maya dan harga masuk');if(!(tg>en&&sl<en&&sl>0))return toast('Paras atas mesti lebih tinggi dan paras bawah lebih rendah daripada harga masuk');
     const sg=signalFor(code);S.manual=S.manual||[];S.manual.push({id:uid(),inc:1,at:new Date().toISOString(),code,name:nm,d:dt||today(),en,stake:st,tg,sl,md:sg&&sg.md?Math.round(sg.md):null});
-    if(!S.watch.includes(code)){S.watch.push(code);S.watchAt=Date.now();}save();toast('Ditambah ke Robot Manual');getBars(code).catch(()=>{});close();closeSheet();goTab('robot');};
+    save();toast('Ditambah ke Robot Manual');getBars(code).catch(()=>{});close();closeSheet();goTab('robot');};
 }
 function mtag(p){return p.src==='A'?'<span class="mtag a">A</span>':'<span class="mtag m">M</span>';}
 function manRow(p){const nm=shortName(p.name||nameOf(p.code));const m=mk(p.code),now=nowPx(p.code);
@@ -1272,8 +1217,7 @@ function openStatusHelp(){
     ['⌛','Isyarat tamat tanpa keputusan','30 hari berlalu tanpa harga sampai paras atas atau paras bawah.'],
     ['⚪','Tiada isyarat teknikal aktif','Tiada isyarat baharu buat masa ini. Skor dan tahap (Kuat / Neutral / Lemah) menunjukkan keadaan indicator sekarang.'],
     ['✍️','Robot manual sejak …','Coin ini sedang diuji dalam Robot Manual anda (tab Robot): tarikh dan harga masuk maya, serta untung atau rugi semasa.'],
-    ['💧','Kecairan rendah','Coin yang jarang didagang (bawah $1 juta sehari). Harga belian dan jualan sebenar coin begini selalunya lebih teruk, jadi app tidak memberi isyarat untuknya.'],
-    ['💼','Pegangan anda','Untung atau rugi pegangan anda berbanding harga kos yang anda masukkan di Portfolio. "Di bawah paras sokongan mengekor" bermaksud harga tutup jatuh di bawah harga tertinggi sejak tarikh belian tolak 2.5× ATR, iaitu tanda momentum menurun.']];
+    ['💧','Kecairan rendah','Coin yang jarang didagang (bawah $1 juta sehari). Harga belian dan jualan sebenar coin begini selalunya lebih teruk, jadi app tidak memberi isyarat untuknya.']];
   const lv=[['b-ok','Kuat','4–5 daripada 5 indicator positif: trend dan momentum menaik.'],['b-warn','Neutral – tunggu pengesahan','Kira-kira separuh indicator positif: keadaan bercampur.'],['b-no','Lemah','Kebanyakan indicator negatif: trend atau momentum menurun.']];
   const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
   d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true"><div class="shd-top" style="margin-bottom:10px"><h2 style="margin:0">Maksud status</h2><button class="xbtn" id="helpX" aria-label="Tutup">✕</button></div>
@@ -1296,32 +1240,7 @@ function statusHTML(code,name,compact){
 
 /* ================= KETEPATAN ISYARAT ================= */
 const RES={W:['Paras atas','up'],L:['Paras bawah','dn'],T:['Tamat masa','']};
-function trackCard(){
-  const T=S.track;if(!T||!T.all)return '';
-  const a=T.all;
-  if(!a.n)return `<section class="rowsec"><h3>Ketepatan isyarat<small>sejak ${fmtD(T.started)}</small></h3><button class="trk" onclick="openTrack()"><span>Robot mula merekod setiap isyarat teknikal pada ${fmtD(T.started)}. <b>${T.open}</b> isyarat sedang dipantau; keputusan pertama muncul bila sasaran, had rugi atau had masa dicapai.</span><span class="go">Lihat</span></button></section>`;
-  return `<section class="rowsec"><h3>Ketepatan isyarat<small>keputusan sebenar sejak ${fmtD(T.started)}</small></h3>
-   <button class="trk" onclick="openTrack()"><span class="tk"><b class="big">${a.win}%</b><small>sampai paras atas</small></span><span class="tk"><b class="big">${a.exp}%</b><small>dijangka</small></span>
-   <span class="tk"><b class="big ${a.avg>=0?'up':'dn'}">${a.avg>0?'+':''}${a.avg}%</b><small>purata pergerakan</small></span><span class="tk"><b class="big">${a.n}</b><small>isyarat selesai</small></span><span class="go">Lihat</span></button></section>`;
-}
 function sumRow(lbl,x){return x&&x.n?`<div class="kv"><span>${lbl}</span><b>${x.w}/${x.n} ke paras atas (${x.win}%) · ${x.avg>0?'+':''}${x.avg}%</b></div>`:`<div class="kv"><span>${lbl}</span><b>-</b></div>`;}
-function openTrack(){
-  const T=S.track;if(!T)return;
-  let h=`<div class="row between"><h2 style="margin:0">Ketepatan isyarat</h2><button class="btn sm sec" onclick="closeSheet()">Tutup</button></div>
-   <p class="muted">Setiap isyarat teknikal sejak ${fmtD(T.started)} direkod dan disemak dengan harga sebenar. Tiada isyarat dipadam atau dipilih.</p>
-   <div class="card"><h3 style="margin-top:0">Ringkasan</h3>${sumRow('30 hari',T.d30)}${sumRow('90 hari',T.d90)}${sumRow('Keseluruhan',T.all)}
-   <div class="kv"><span>Sedang dipantau</span><b>${T.open} isyarat</b></div>${T.all.n?`<div class="kv"><span>Purata tempoh</span><b>${T.all.days} hari</b></div>`:''}</div>`;
-  if(T.calib&&T.calib.length)h+=`<div class="card"><h3 style="margin-top:0">Adakah % app tepat?</h3><p class="muted">Kebarangkalian dijangka berbanding kadar sebenar harga sampai paras atas. Bar emas sepatutnya hampir sama panjang dengan garis.</p>`+
-    T.calib.map(b=>`<div class="cal"><span>${b.band}%</span><div class="pbar"><span style="width:${b.act}%"></span><i style="left:${b.exp}%"></i></div><span>${b.act}% <small class="muted">(${b.n})</small></span></div>`).join('')+`</div>`;
-  h+=`<div class="card"><h3 style="margin-top:0">Ikut jenis isyarat</h3><div class="bth"><div class="hd"><span>Isyarat</span><span>Selesai</span><span>Paras atas</span><span>Purata</span></div>`+
-    Object.entries(T.setups).map(([k,v])=>`<div><span>${esc(setupName(k))}</span><span>${v.n||0}</span><span>${v.n?v.win+'%':'-'}</span><span>${v.n?(v.avg>0?'+':'')+v.avg+'%':'-'}</span></div>`).join('')+`</div></div>`;
-  if(T.recent.length)h+=`<div class="card"><h3 style="margin-top:0">Keputusan terkini</h3>`+T.recent.map(s=>`<div class="kv trow" data-code="${esc(s.c)}"><span><b>${esc(shortName(s.n))}</b> <span class="muted">${esc(s.c)} · ${esc(setupName(s.k))} · ${fmtD(s.d)}</span></span><b class="${RES[s.res][1]}">${RES[s.res][0]} ${s.ret>0?'+':''}${s.ret}%</b></div>`).join('')+`</div>`;
-  if(T.openList.length)h+=`<div class="card"><h3 style="margin-top:0">Sedang dipantau</h3>`+T.openList.map(s=>`<div class="kv trow" data-code="${esc(s.c)}"><span><b>${esc(shortName(s.n))}</b> <span class="muted">${esc(s.c)} · ${fmtD(s.d)}</span></span><span>${s.p}% · ${px(s.en)} → ${px(s.tg)}</span></div>`).join('')+`</div>`;
-  h+=`<p class="disc">Pergerakan dikira selepas kos ${(BTH().fee*100).toFixed(1)}%. Prestasi lampau tidak menjamin prestasi masa depan.</p>`;
-  openSheet(h);
-  document.querySelectorAll('.trow').forEach(r=>r.onclick=()=>stockSheet(r.dataset.code,nameOf(r.dataset.code)));
-}
-
 /* ================= PUSAT AMARAN ================= */
 const ALERT_DEF={on:{berita:true,isyarat:true,robot:true,harga:true,teknikal:true},lossPct:10,price:[],seen:{},notified:{},notify:false};
 function AL(){if(!S.alerts)S.alerts={};const a=S.alerts;const D=structuredClone(ALERT_DEF);Object.keys(D).forEach(k=>{if(a[k]===undefined)a[k]=D[k];});if(!a.on)a.on={};Object.keys(D.on).forEach(k=>{if(a.on[k]===undefined)a.on[k]=D.on[k];});
@@ -1356,20 +1275,14 @@ function computeAlerts(){
   const A=AL(),out=[],asof=S.market?S.market.meta.asof:today();
   const push=(o)=>out.push(o);
   if(A.on.harga){
-    S.holdings.forEach(hd=>{const lc=lastClose(hd.code);if(!lc)return;const pct=(lc.c/hd.cost-1)*100;
-      if(pct<=-Math.abs(A.lossPct))push({id:'loss:'+hd.code+':'+lc.d,lv:'action',ic:'📉',cat:'harga',code:hd.code,
-        title:`${shortName(hd.name||nameOf(hd.code))} turun ${Math.abs(pct).toFixed(1)}% dari kos`,body:`Harga ${px(lc.c)} berbanding kos ${px(hd.cost)}. Had amaran anda: ${A.lossPct}%.`});});
     A.price.forEach(p=>{const lc=lastClose(p.code);if(!lc)return;const hit=p.op==='>='?lc.c>=p.price:lc.c<=p.price;
       if(hit)push({id:'px:'+p.id+':'+lc.d,lv:'action',ic:'🎯',cat:'harga',code:p.code,
         title:`${shortName(nameOf(p.code)||p.code)} ${p.op==='>='?'naik ke':'turun ke'} ${px(lc.c)}`,body:`Mencapai sasaran anda (${p.op==='>='?'≥':'≤'} ${px(p.price)}) pada ${fmtD(lc.d)}.`});});
   }
-  if(A.on.harga)S.holdings.forEach(hd=>{if(holdingInfo(hd).kind!=='ok')return;const XP=exitPlan(hd);
-    if(XP&&XP.hit)push({id:'trail:'+hd.code+':'+XP.last.d,lv:'action',ic:'🛑',cat:'harga',code:hd.code,
-      title:`${shortName(hd.name||nameOf(hd.code))} tutup di bawah paras sokongan`,body:`Harga tutup ${px(XP.last.c)} < paras sokongan mengekor ${px(XP.trail)}.`,go:'portfolio'});});
   if(A.on.teknikal&&S.market){
     const seenC=new Set();
-    [...S.holdings.map(h=>h.code),...S.watch].forEach(c=>{if(seenC.has(c))return;seenC.add(c);const m=mk(c);if(!m||!m.va)return;
-      const nm=shortName(m.n);const own=S.holdings.some(h=>h.code===c);
+    [...new Set((S.manual||[]).filter(x=>!x.closed).map(x=>x.code))].forEach(c=>{if(seenC.has(c))return;seenC.add(c);const m=mk(c);if(!m||!m.va)return;
+      const nm=shortName(m.n);const own=true;
       if(m.x==='d'&&own)push({id:'dc:'+c+':'+m.d,lv:'action',ic:'⚠️',cat:'teknikal',code:c,title:`${nm}: death cross`,body:'EMA50 lintas bawah EMA200 pada coin dalam pegangan anda.'});
       const bo=bestOp(c);if(bo&&bo.ev>0)push({id:'op:'+c+':'+bo.k+':'+m.d,lv:'info',ic:'💡',cat:'teknikal',code:c,title:`${nm}: isyarat teknikal ${bo.p}%`,body:`${setupName(bo.k)}. Tempoh biasa ke paras atas ${Math.round(bo.md||0)} hari.`});
       if(m.x==='g')push({id:'gc:'+c+':'+m.d,lv:'info',ic:'✨',cat:'teknikal',code:c,title:`${nm}: golden cross`,body:'EMA50 lintas atas EMA200.'});
@@ -1413,7 +1326,7 @@ async function regPeriodic(){
 function openAlerts(){
   const list=computeAlerts();const A=AL();
   let h=`<div class="row between"><h2 style="margin:0">Amaran</h2><div class="row"><button class="btn sm sec" id="alRead">Tanda semua dibaca</button><button class="btn sm sec" onclick="closeSheet()">Tutup</button></div></div>`;
-  if(!list.length)h+=`<div class="alert a-green" style="margin-top:14px">Tiada amaran buat masa ini. Tambah coin ke watchlist, rekod pegangan, atau tetapkan amaran harga supaya app boleh memantau untuk anda.</div>`;
+  if(!list.length)h+=`<div class="alert a-green" style="margin-top:14px">Tiada amaran buat masa ini. Tetapkan 🔔 Amaran harga pada coin atau guna Robot supaya app boleh memantau untuk anda.</div>`;
   ['critical','action','info'].forEach(lv=>{const g=list.filter(a=>a.lv===lv);if(!g.length)return;
     h+=`<h3 style="margin:18px 0 8px">${LV[lv].t}</h3>`+g.map(a=>`<button class="alrow alert ${LV[lv].c}${A.seen[a.id]?' seen':''}" data-al="${esc(a.id)}"><span class="ai">${a.ic}</span><span><b>${esc(a.title)}</b><span class="ab">${esc(a.body)}</span></span></button>`).join('');});
   if(!A.notify)h+=`<div class="card" style="margin-top:16px"><b>Terima notifikasi telefon</b><p class="muted" style="margin:4px 0 10px">Amaran segera dihantar sebagai notifikasi bila app menerima data baharu.</p><button class="btn sm gold" id="alNot">Hidupkan notifikasi</button></div>`;
@@ -1453,14 +1366,12 @@ function bindDisplay(){const f=$('#dpFs'),t=$('#dpTh');if(f)f.onchange=()=>{S.se
 function alertSettingsHTML(){
   const A=AL();const lab={
    isyarat:['🟢','Isyarat aktif','Coin yang dapat Isyarat Kuat hari ini.',1],
-   berita:['📰','Berita crypto','Berita positif hari ini, dan berita negatif untuk coin dalam watchlist, portfolio atau Robot anda.',1],
+   berita:['📰','Berita crypto','Berita positif yang kukuh hari ini, dan berita negatif untuk coin dalam Robot anda.',1],
    robot:['🤖','Robot (Manual & Auto)','Coin dalam tab Robot sampai sasaran, cut loss, cukup hari, atau Robot Auto masuk coin baru.',1],
-   harga:['💲','Harga','Harga sampai paras yang anda tetapkan, atau pegangan turun lebih % di bawah.',1],
-   teknikal:['📈','Isyarat teknikal','Golden/death cross dan RSI melampau untuk coin anda.',0]};
+   harga:['💲','Amaran harga','Harga coin sampai paras yang anda tetapkan (🔔 Amaran harga pada coin).',1],
+   teknikal:['📈','Isyarat teknikal','Golden/death cross dan RSI melampau untuk coin dalam Robot anda.',0]};
   return `<div class="card"><h2>Amaran</h2>
    ${Object.entries(lab).map(([k,[ic,t,d,ph]])=>`<div class="toggle altg"><div><b>${ic} ${t}</b><small>${d}</small></div><input type="checkbox" data-alon="${k}" ${A.on[k]?'checked':''}></div>`).join('')}
-   <label>Isyarat baharu untuk</label><select id="alScope"><option value="all"${A.sigScope!=='watch'?' selected':''}>Semua coin</option><option value="watch"${A.sigScope==='watch'?' selected':''}>Coin dalam watchlist sahaja</option></select>
-   <label>Amaran bila pegangan turun melebihi (% dari kos)</label><input id="alLoss" inputmode="decimal" value="${A.lossPct}">
    <div class="toggle" style="margin-top:6px"><span>Notifikasi telefon ${A.notify&&'Notification' in window&&Notification.permission==='granted'?'<span class="badge b-ok">aktif</span>':''}</span>
    ${A.notify?`<button class="btn sm sec" id="alOff">Matikan</button>`:`<button class="btn sm gold" id="alOn">Hidupkan</button>`}</div>
    <div class="disc">Amaran dikira dalam telefon anda bila app dibuka. Hidupkan Notifikasi telefon supaya amaran penting muncul sebagai notifikasi.</div></div>`;
@@ -1468,8 +1379,6 @@ function alertSettingsHTML(){
 function bindAlertSettings(){
   const A=AL();
   document.querySelectorAll('[data-alon]').forEach(i=>i.onchange=()=>{A.on[i.dataset.alon]=i.checked;save();updateBell();});
-  $('#alScope').onchange=e=>{A.sigScope=e.target.value;save();updateBell();};
-  $('#alLoss').onchange=e=>{A.lossPct=Math.abs(num(e.target.value))||10;save();updateBell();};
   const on=$('#alOn');if(on)on.onclick=enableNotify;const off=$('#alOff');if(off)off.onclick=()=>{A.notify=false;save();render();};
 }
 
@@ -1539,7 +1448,7 @@ const EN_EXACT={
 'Amaran harga':'Price alert','Bila harga':'When price','naik ke / melebihi':'rises to / above','turun ke / di bawah':'falls to / below','Harga (USD)':'Price (USD)',
 'Tetapkan amaran':'Set alert','Amaran aktif':'Active alerts','Disemak setiap kali data harga harian dikemas kini (selepas pasaran tutup).':'Checked each time daily price data updates (after market close).',
 'Tanda semua dibaca':'Mark all as read','Perlu tindakan segera':'Needs immediate action','Perlu perhatian':'Needs attention','Untuk makluman':'For your information',
-'Tiada amaran buat masa ini. Tambah coin ke watchlist, rekod pegangan, atau tetapkan amaran harga supaya app boleh memantau untuk anda.':'No alerts right now. Add coins to your watchlist, record holdings, or set price alerts so the app can monitor for you.',
+'Tiada amaran buat masa ini. Tetapkan 🔔 Amaran harga pada coin atau guna Robot supaya app boleh memantau untuk anda.':'No alerts right now. Add coins to your watchlist, record holdings, or set price alerts so the app can monitor for you.',
 'Terima notifikasi telefon':'Get phone notifications','Amaran segera dihantar sebagai notifikasi bila app menerima data baharu.':'Urgent alerts are sent as notifications when the app receives new data.',
 'Hidupkan notifikasi':'Turn on notifications',
 
@@ -1726,13 +1635,24 @@ const EN_PHRASE=[
 ];
 
 Object.assign(EN_EXACT,{
+'peluang':'chance',
+'Robot dan tetapan disimpan dalam telefon ini sahaja (tiada akaun, tiada pelayan). Guna Sandaran data di Tetapan untuk pindah ke telefon lain.':'Robot and settings are stored on this phone only (no account, no server). Use Data backup in Settings to move to another phone.',
+'Tiada amaran buat masa ini. Tetapkan 🔔 Amaran harga pada coin atau guna Robot supaya app boleh memantau untuk anda.':'No alerts right now. Set a 🔔 Price alert on a coin or use the Robot so the app can monitor for you.',
+'Berita positif yang kukuh hari ini, dan berita negatif untuk coin dalam Robot anda.':'Solid positive news today, and negative news for coins in your Robot.',
+'Golden/death cross dan RSI melampau untuk coin dalam Robot anda.':'Golden/death cross and extreme RSI for coins in your Robot.',
+'Amaran harga':'Price alert','Harga coin sampai paras yang anda tetapkan (🔔 Amaran harga pada coin).':'Coin price reaches the level you set (🔔 Price alert on a coin).',
+'ProCoin by ProKuiz · v1.0 · Robot dan tetapan disimpan dalam telefon ini sahaja. Guna Sandaran data untuk pindah ke telefon lain.':'ProCoin by ProKuiz · v1.0 · Robot and settings are stored on this phone only. Use Data backup to move to another phone.',
+'Harga dikemas kini secara automatik. Isyarat teknikal untuk rujukan sahaja, bukan cadangan beli atau jual.':'Price updated automatically. Technical signals are for reference only, not buy or sell recommendations.',
+'Harga dikemas kini secara automatik.':'Price updated automatically.','Data sedang dimuat.':'Data is loading.',
+'📝 Ringkasan':'📝 Summary','🔥 Gainers & Losers':'🔥 Gainers & Losers','Berbanding harga tutup harian terakhir (8 pagi)':'Versus the last daily close (8am)',' · harga masa nyata':' · real-time prices',
+'Bitcoin':'Bitcoin',
 '▲ positif':'▲ positive','▼ negatif':'▼ negative','• neutral':'• neutral',
 'ProCoin hanya memberi indicator. Untuk membeli crypto, guna bursa crypto yang berdaftar dengan Suruhanjaya Sekuriti (SC) Malaysia.':'ProCoin only provides indicators. To buy crypto, use a crypto exchange registered with the Securities Commission (SC) Malaysia.',
 'Bursa crypto berdaftar SC':'SC-registered crypto exchange','Senarai rasmi SC':'Official SC list',
 'ProCoin tiada kaitan dengan platform ini dan tidak menerima bayaran. Semak senarai rasmi SC dan yuran sebelum membuka akaun. Kod coin disalin bila anda tekan platform.':'ProCoin is not affiliated with these platforms and receives no payment. Check the official SC list and fees before opening an account. The coin code is copied when you tap a platform.',
 'Isyarat aktif':'Active signals','Coin yang dapat Isyarat Kuat hari ini.':'Coins that got a Strong signal today.',
 'Ini bacaan indicator, bukan cadangan beli atau jual.':'This is an indicator reading, not a buy or sell recommendation.',
-'Penapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.':'Filtered by headline keywords. Positive news does not mean the price will surely rise. This is not a buy or sell recommendation.',
+'Ditapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.':'Filtered by headline keywords. Positive news does not mean the price will surely rise. This is not a buy or sell recommendation.',
 'Isyarat Pemerhatian lebih lemah daripada Isyarat Kuat dan tidak dimasukkan oleh Robot Auto. Ini bacaan indicator, bukan cadangan beli atau jual.':'Watch signals are weaker than Strong signals and are not entered by the Auto Robot. This is an indicator reading, not a buy or sell recommendation.',
 'Isyarat teknikal untuk rujukan sahaja — bukan cadangan beli/jual. Data harga harian bersifat indikatif dan mungkin berbeza sedikit dari harga di bursa crypto.':'Technical signals are for reference only — not a buy/sell recommendation. Daily price data is indicative and may differ slightly from prices on crypto exchanges.',
 'Tidak melepasi paras neutral. Bukan ramalan harga akan jatuh; cuma isyarat ini kurang boleh dipercayai untuk coin itu.':'Does not pass the neutral level. Not a prediction that the price will fall; this signal is just less reliable for that coin.',
@@ -2074,13 +1994,24 @@ EN_RX.unshift(
 
 /* ===== ProCoin: terjemahan tambahan ===== */
 Object.assign(EN_EXACT,{
+'peluang':'chance',
+'Robot dan tetapan disimpan dalam telefon ini sahaja (tiada akaun, tiada pelayan). Guna Sandaran data di Tetapan untuk pindah ke telefon lain.':'Robot and settings are stored on this phone only (no account, no server). Use Data backup in Settings to move to another phone.',
+'Tiada amaran buat masa ini. Tetapkan 🔔 Amaran harga pada coin atau guna Robot supaya app boleh memantau untuk anda.':'No alerts right now. Set a 🔔 Price alert on a coin or use the Robot so the app can monitor for you.',
+'Berita positif yang kukuh hari ini, dan berita negatif untuk coin dalam Robot anda.':'Solid positive news today, and negative news for coins in your Robot.',
+'Golden/death cross dan RSI melampau untuk coin dalam Robot anda.':'Golden/death cross and extreme RSI for coins in your Robot.',
+'Amaran harga':'Price alert','Harga coin sampai paras yang anda tetapkan (🔔 Amaran harga pada coin).':'Coin price reaches the level you set (🔔 Price alert on a coin).',
+'ProCoin by ProKuiz · v1.0 · Robot dan tetapan disimpan dalam telefon ini sahaja. Guna Sandaran data untuk pindah ke telefon lain.':'ProCoin by ProKuiz · v1.0 · Robot and settings are stored on this phone only. Use Data backup to move to another phone.',
+'Harga dikemas kini secara automatik. Isyarat teknikal untuk rujukan sahaja, bukan cadangan beli atau jual.':'Price updated automatically. Technical signals are for reference only, not buy or sell recommendations.',
+'Harga dikemas kini secara automatik.':'Price updated automatically.','Data sedang dimuat.':'Data is loading.',
+'📝 Ringkasan':'📝 Summary','🔥 Gainers & Losers':'🔥 Gainers & Losers','Berbanding harga tutup harian terakhir (8 pagi)':'Versus the last daily close (8am)',' · harga masa nyata':' · real-time prices',
+'Bitcoin':'Bitcoin',
 '▲ positif':'▲ positive','▼ negatif':'▼ negative','• neutral':'• neutral',
 'ProCoin hanya memberi indicator. Untuk membeli crypto, guna bursa crypto yang berdaftar dengan Suruhanjaya Sekuriti (SC) Malaysia.':'ProCoin only provides indicators. To buy crypto, use a crypto exchange registered with the Securities Commission (SC) Malaysia.',
 'Bursa crypto berdaftar SC':'SC-registered crypto exchange','Senarai rasmi SC':'Official SC list',
 'ProCoin tiada kaitan dengan platform ini dan tidak menerima bayaran. Semak senarai rasmi SC dan yuran sebelum membuka akaun. Kod coin disalin bila anda tekan platform.':'ProCoin is not affiliated with these platforms and receives no payment. Check the official SC list and fees before opening an account. The coin code is copied when you tap a platform.',
 'Isyarat aktif':'Active signals','Coin yang dapat Isyarat Kuat hari ini.':'Coins that got a Strong signal today.',
 'Ini bacaan indicator, bukan cadangan beli atau jual.':'This is an indicator reading, not a buy or sell recommendation.',
-'Penapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.':'Filtered by headline keywords. Positive news does not mean the price will surely rise. This is not a buy or sell recommendation.',
+'Ditapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.':'Filtered by headline keywords. Positive news does not mean the price will surely rise. This is not a buy or sell recommendation.',
 'Isyarat Pemerhatian lebih lemah daripada Isyarat Kuat dan tidak dimasukkan oleh Robot Auto. Ini bacaan indicator, bukan cadangan beli atau jual.':'Watch signals are weaker than Strong signals and are not entered by the Auto Robot. This is an indicator reading, not a buy or sell recommendation.',
 'Isyarat teknikal untuk rujukan sahaja — bukan cadangan beli/jual. Data harga harian bersifat indikatif dan mungkin berbeza sedikit dari harga di bursa crypto.':'Technical signals are for reference only — not a buy/sell recommendation. Daily price data is indicative and may differ slightly from prices on crypto exchanges.',
 'Tidak melepasi paras neutral. Bukan ramalan harga akan jatuh; cuma isyarat ini kurang boleh dipercayai untuk coin itu.':'Does not pass the neutral level. Not a prediction that the price will fall; this signal is just less reliable for that coin.',
@@ -2190,7 +2121,7 @@ function setLang(l){
   S.settings.lang=l;save();document.documentElement.lang=l==='en'?'en':'ms';
   if(MO){MO.disconnect();MO=null;}
   closeSheet();render();
-  const nav={coin:'Coin',news:'News',robot:'Robot',portfolio:'Portfolio',tetapan:'Tetapan'};
+  const nav={coin:'Coin',news:'News',gl:'G & L',robot:'Robot',tetapan:'Tetapan'};
   document.querySelectorAll('#nav button').forEach(b=>{const t=b.lastChild;t.nodeValue=nav[b.dataset.tab];});
   $('#bell').setAttribute('aria-label','Amaran');
   updateLangBtn();startI18N();
@@ -2235,7 +2166,7 @@ window.addEventListener('popstate',()=>{
 });
 try{history.replaceState({ps:0},'');}catch(e){}bkGuard();
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
-function render(){document.body.dataset.tab=TAB;setTimeout(updateBell,0);const R={coin:rCoin,news:rNews,robot:rRobot,portfolio:rPortfolio,tetapan:rTetapan};if(!R[TAB])TAB='coin';R[TAB]();}
+function render(){document.body.dataset.tab=TAB;setTimeout(updateBell,0);const R={coin:rCoin,news:rNews,gl:rGL,robot:rRobot,tetapan:rTetapan};if(!R[TAB])TAB='coin';R[TAB]();}
 
 /* ================= TAB: COIN ================= */
 let Q='';let SCAN={};
@@ -2279,11 +2210,10 @@ function featured(){
   // 2) Tiada Isyarat Kuat → Pilihan hari ini: Meter ProCoin tertinggi (coin, cukup didagang)
   if(S.market){let best=null;Object.entries(S.market.stocks).forEach(([c,v])=>{if(v.s!=='ok'||!v.va||v.liq===0||!v.c)return;const M=meterOf(c);if(M&&(!best||M.v>best.v||(M.v===best.v&&v.sc>mk(best.c).sc)))best={c,v:M.v};});
     if(best)return {code:best.c,tag:'Pilihan hari ini · Meter tertinggi'};}
-  const any=S.watch[0]||(S.holdings[0]&&S.holdings[0].code);
-  return any?{code:any,tag:'Dari senarai anda'}:null;
+  return mk('BTC')?{code:'BTC',tag:'Bitcoin'}:null;
 }
 
-let HERO_TF='D';
+let HERO_TF='1j';
 function heroSeries(code,tf){const R=heroSeries0(code,tf);const l=livePx(code);if(R&&l&&R.d.length){const last=R.d[R.d.length-1],intra=last.length>10;const lt=intra?l.t:l.t.slice(0,10);if(lt>last){if(intra||tf==='D'){R.v=[...R.v,l.p];R.d=[...R.d,lt];}else{R.v=[...R.v.slice(0,-1),l.p];}}}return R;}
 function heroSeries0(code,tf){
   const c=S.cache[code],m=mk(code),daily=c&&c.bars.length>=5?c.bars:null,ib=INTRA[code];
@@ -2299,15 +2229,17 @@ function heroSeries0(code,tf){
   return null;}
 const HTF=[['30m','30m'],['1j','1J'],['12j','12J'],['D','Hari'],['W','Minggu'],['M','Bulan'],['Y','Tahun']];
 const TFN={'30m':'30 minit','1j':'1 jam','12j':'Sesi','D':'Harian','W':'Mingguan','M':'Bulanan','Y':'Tahunan'};
-function heroTfHTML(code){return `<div class="seg tfseg htf">${HTF.map(([k,l])=>`<button data-htf="${k}" data-code="${esc(code)}" class="${k===HERO_TF?'on':''}${['30m','1j','12j'].includes(k)&&!hasIntra(code)?' dis':''}">${l}</button>`).join('')}</div>`;}
+function heroTfHTML(code){return `<div class="seg tfseg htf">${HTF.map(([k,l])=>`<button data-htf="${k}" data-code="${esc(code)}" class="${k===HERO_TF?'on':''}">${l}</button>`).join('')}</div>`;}
 async function setHeroTf(tf,code){
-  if(['30m','1j','12j'].includes(tf)){if(!hasIntra(code))return toast('Carta 30 minit / 1 jam / 12 jam hanya untuk coin yang dipantau (isyarat aktif atau skor tinggi).');try{await getIntra(code);}catch(e){return toast('Data carta tidak tersedia.');}}
+  if(['30m','1j','12j'].includes(tf)){try{await getIntra(code);}catch(e){return toast('Data carta tidak tersedia.');}}
   else if(tf!=='D'||!S.cache[code]){try{await getBars(code);}catch(e){}}
   HERO_TF=tf;renderWatch();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-htf]');if(!b)return;e.stopPropagation();setHeroTf(b.dataset.htf,b.dataset.code);},true);
 function heroChart(code){
-  let Sx=heroSeries(code,HERO_TF);if(!Sx){HERO_TF='D';Sx=heroSeries(code,'D');}if(!Sx||Sx.v.length<2)return '';
-  const tfl=TFN[HERO_TF];const v=Sx.v,d0=Sx.d[0],d1=Sx.d[Sx.d.length-1];const fb=x=>HERO_TF==='12j'?fmtBar(x.slice(0,10),'Harian')+(x.slice(11,13)<'13'?' AM':' PM'):fmtBar(x,tfl);
+  let Sx=heroSeries(code,HERO_TF);
+  if(!Sx&&['30m','1j','12j'].includes(HERO_TF)&&!INTRA[code]&&!heroChart._ld){heroChart._ld=1;getIntra(code).then(()=>{heroChart._ld=0;renderWatch();}).catch(()=>{heroChart._ld=0;});}
+  let tf=HERO_TF;if(!Sx){tf='D';Sx=heroSeries(code,'D');}if(!Sx||Sx.v.length<2)return '';
+  const tfl=TFN[tf];const v=Sx.v,d0=Sx.d[0],d1=Sx.d[Sx.d.length-1];const fb=x=>tf==='12j'?fmtBar(x.slice(0,10),'Harian')+(x.slice(11,13)<'13'?' AM':' PM'):fmtBar(x,tfl);
   const W=400,H=230,mn=Math.min(...v),mx=Math.max(...v),r=mx-mn||1,y=x=>2+(1-(x-mn)/r)*(H-4);
   HC={v,d:Sx.d,mn,mx,fb};
   const pts=v.map((x,i)=>`${(i/(v.length-1)*W).toFixed(1)},${y(x).toFixed(1)}`).join(' ');
@@ -2329,8 +2261,7 @@ function heroHTML(){
     <div class="acts"><button class="btn" id="hSync">Cuba muat semula</button></div></section>`;
   const f=featured();
   if(!f)return `<section class="hero" style="--hc:#14524f"><span class="tag">✦ <b>${S.market?Object.keys(S.market.stocks).length+' coin':'Data pasaran sedia'}</b></span>
-    <h2>Cari coin pertama anda.</h2><p class="sub">Tekan ⭐ pada mana-mana coin untuk menambahnya ke watchlist.</p>
-    <div class="acts"><button class="btn" id="hFocus">Cari coin</button></div></section>`;
+    <h2>Data sedang dimuat.</h2><p class="sub">Harga dikemas kini secara automatik.</p></section>`;
   const code=f.code;const nm=nameOf(code);const st=status(code,nm);const m=mk(code);const lc=lastClose(code);
   const inW=S.watch.includes(code);const hide=false;
   return `<section class="hero" style="--hc:${st==='no'?'#5a1f1c':'#0f5a45'}">${heroTfHTML(code)}${heroChart(code)}<div class="shade"></div>
@@ -2338,24 +2269,19 @@ function heroHTML(){
     ${m&&m.va&&!hide?`<div class="hstat">${bestOp(code)?(()=>{const R=rateSignal(bestOp(code));return `<span><small>Isyarat</small><span class="badge ${R.cls}">${R.lbl}</span></span>`;})():`<span><small>Isyarat</small><span class="badge b-na">Tiada isyarat aktif</span></span>`}${(()=>{const V=scoreVerdict(m.sc,m.va);return V?`<span><small>Skor teknikal ${m.sc}/${m.va}</small><span class="badge ${V.cls}">${V.lbl}</span></span>`:'';})()}<button class="sinfo" onclick="openStatusHelp()" aria-label="Maksud status">ⓘ</button></div>`:''}
     <h2>${esc(shortName(nm)||code)}</h2>
     <p class="sub">${esc(code)} / USD${lc?`, tutup harian ${px(lc.c)} pada ${fmtD(lc.d)}${m&&m.ch!=null?` (${m.ch>=0?'+':''}${m.ch.toFixed(2)}%)`:''}.`:'.'}</p>${liveLine(code)}
-    ${m&&m.va&&!hide?`<div class="stats">${bestOp(code)?`<div><b>${bestOp(code).p}%</b>peluang sejarah</div><div><b>${Math.round(bestOp(code).md||0)} hari</b>tempoh biasa</div>`:''}<div><b>${m.r!=null?Math.round(m.r):'-'}</b>RSI 14</div><div><b>${m.e2==null?'-':m.e2?'Atas':'Bawah'}</b>EMA200</div></div>`:''}
+    ${m&&m.va&&!hide?`<div class="stats">${bestOp(code)?`<div><b>${bestOp(code).p}%</b>peluang</div><div><b>${Math.round(bestOp(code).md||0)} hari</b>tempoh biasa</div>`:''}<div><b>${m.r!=null?Math.round(m.r):'-'}</b>RSI 14</div><div><b>${m.e2==null?'-':m.e2?'Atas':'Bawah'}</b>EMA200</div></div>`:''}
     ${m&&m.va&&!hide&&st==='ok'&&bestOp(code)?platChips(code,'pfl hpf'):''}
-    <div class="acts"><button class="btn" data-open="${esc(code)}">▶ Lihat analisa</button><button class="btn sec" data-wt="${esc(code)}">${inW?'✓ Dalam watchlist':'+ Watchlist'}</button></div></section>`;
+    <div class="acts"><button class="btn" data-open="${esc(code)}">▶ Lihat analisa</button><button class="btn sec" onclick="openAnalysis('${esc(code)}')">📝 Ringkasan</button></div></section>`;
 }
 function rCoin(){
   const U=universe();const M=S.market;
   let h=heroHTML();
-  h+=`<div class="search"><input id="q" placeholder="Cari kod atau nama coin (cth. BTC)" value="${esc(Q)}" aria-label="Cari coin"></div><div class="results list" id="res"></div>`;
   const crit=unread(computeAlerts()).filter(a=>a.lv==='critical');
   if(crit.length)h+=`<button class="urgent" onclick="openAlerts()"><span class="ai">${crit[0].ic}</span><span><b>${esc(crit[0].title)}</b><span class="ab">${crit.length>1?`dan ${crit.length-1} lagi amaran segera`:esc(crit[0].body)}</span></span><span class="go">Lihat</span></button>`;
-  if(S.market)h+=dataStatusHTML();
   h+=klciHTML();
-  h+=toolsHTML();
   if(S.market)h+=`<div class="pad" style="margin-top:12px"><button class="smbtn" onclick="openSummary()"><span>📋</span><span><b>Ringkasan isyarat aktif</b><small>${topSignals(60).length} coin · bermula hari ini</small></span><span class="go">Buka</span></button></div>`;
   h+=newsBoxHTML();
   h+=obsHTML();
-  h+=rail('Watchlist anda',S.watch.length?S.watch.length+' coin':'',S.watch.filter(c=>status(c,nameOf(c))!=='no').map(c=>({code:c,name:nameOf(c)})),false,'Belum ada coin. Buka mana-mana coin dan tekan ☆ Tambah watchlist.');
-  if(S.holdings.length)h+=rail('Pegangan saya','',S.holdings.map(x=>({code:x.code,name:x.name||nameOf(x.code)})),true,'');
   if(M){
     h+=rail('Semua coin','ikut nilai pasaran',Object.entries(M.stocks).filter(([c,v])=>v.c!=null).sort((a,b)=>(((S.fund&&S.fund.items&&S.fund.items[a[0]])||{}).rk||999)-(((S.fund&&S.fund.items&&S.fund.items[b[0]])||{}).rk||999)).map(([code,v])=>({code,name:v.n})),false,'');
     h+=rail('Isyarat teknikal hari ini','kebarangkalian dari sejarah 5 tahun',screen(v=>v.op&&v.op.some(o=>o.ev>0&&(o.ago||0)===0&&(S.settings.showMod||rateSignal(o).g==='A')&&(S.settings.style!=='ketat'||(o.md||0)>=5)),(a,b)=>b.op[0].p-a.op[0].p),false,'');
@@ -2364,23 +2290,12 @@ function rCoin(){
     h+=rail('Golden cross terkini','EMA50 lintas atas EMA200',screen(v=>v.x==='g',byScore),false,'');
     h+=rail('Trend menaik','harga atas EMA200 dan MACD positif',screen(v=>v.e2&&v.m,byScore,30).slice(5),false,'');
   }
-  h+=trackCard();
-  h+=`<p class="disc" style="margin:18px 16px 0">${M?`Data pasaran setakat ${fmtD(M.meta.asof)}. `:''}Dikemas kini automatik setiap hari. Harga dalam USD. Isyarat teknikal untuk rujukan sahaja, bukan cadangan beli atau jual.</p>`;
+  h+=`<p class="disc" style="margin:18px 16px 0">Harga dikemas kini secara automatik. Isyarat teknikal untuk rujukan sahaja, bukan cadangan beli atau jual.</p>`;
   $('#main').innerHTML=h;
-  const res=()=>{
-    const q=Q.trim().toUpperCase();if(!q){$('#res').innerHTML='';return;}
-    const nq=normName(q);
-    const hits=U.filter(x=>(x.code.toUpperCase().startsWith(q)||normName(x.name).includes(nq))&&status(x.code,x.name)==='ok').slice(0,30);
-    $('#res').innerHTML=hits.length?hits.map(x=>{const m=mk(x.code);return `<div class="item" data-code="${esc(x.code)}" data-name="${esc(x.name)}"><div><b>${esc(x.name)}</b><div class="code">${esc(x.code||'tiada kod')}${m&&m.c!=null?` · ${px(m.c)}`:''}</div>${x.code?statusHTML(x.code,x.name,true):''}</div>${badge(status(x.code,x.name))}</div>`;}).join(''):`<div class="muted" style="padding:10px 0">${U.length?'Tiada padanan. Cuba kod (cth. ETH) atau sebahagian nama.':'Data sedang dimuat.'}</div>`;
-    $('#res').querySelectorAll('.item').forEach(el=>el.onclick=()=>stockSheet(el.dataset.code,el.dataset.name));
-  };
-  $('#q').oninput=e=>{Q=e.target.value;res();};res();
   document.querySelectorAll('.t5r').forEach(p=>p.onclick=()=>stockSheet(p.dataset.code,nameOf(p.dataset.code)));
   document.querySelectorAll('.poster').forEach(p=>p.onclick=()=>stockSheet(p.dataset.code,p.dataset.name));
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>stockSheet(b.dataset.open,nameOf(b.dataset.open)));
-  document.querySelectorAll('[data-wt]').forEach(b=>b.onclick=()=>{if(toggleWatch(b.dataset.wt))render();});
   bindHeroChart();
-  const hf=$('#hFocus');if(hf)hf.onclick=()=>$('#q').focus();
   const hs=$('#hSync');if(hs)hs.onclick=()=>syncData(true);
 }
 function goTab(t){TAB=t;if(t!=='coin')bkEnsure();document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));render();window.scrollTo(0,0);}
@@ -2513,11 +2428,9 @@ function stockSheet(code,name){
     ${code&&st!=='no'?`<div class="shrow">${sheetStatHTML(code)}${meterHTML(code,false,true)}</div>`:''}
     ${code?liveLine(code):''}
     ${code?statusHTML(code,name,true):''}
-    ${code&&mk(code)?`<button class="anbtn" onclick="openAnalysis('${esc(code)}')">📝 Ringkasan analisa${newsFor(code).length?` · 📰 ${newsFor(code).length} berita`:''}</button>`:''}${code&&st!=='no'&&mk(code)&&mk(code).c!=null?`<div class="row cmprow" style="gap:8px"><button class="anbtn cmpb" onclick="CMP=[];openCompare('${esc(code)}')">⚖️ Banding</button><button class="anbtn cmpb" onclick="shareCard('${esc(code)}')">📤 Kongsi</button></div>`:''}</div>`;
+    ${code&&mk(code)?`<button class="anbtn" onclick="openAnalysis('${esc(code)}')">📝 Ringkasan analisa${newsFor(code).length?` · 📰 ${newsFor(code).length} berita`:''}</button>`:''}${code&&st!=='no'&&mk(code)&&mk(code).c!=null?`<div class="row cmprow" style="gap:8px"><button class="anbtn cmpb" onclick="shareCard('${esc(code)}')">📤 Kongsi</button></div>`:''}</div>`;
   if(code){
     h+=`<div class="row" style="margin-bottom:12px">
-      <button class="btn sm ${inW?'gold':'sec'}" id="wBtn">${inW?'★ Dalam watchlist':'☆ Tambah watchlist'}</button>
-      <button class="btn sm sec" id="hBtn">+ Portfolio</button>
       <button class="btn sm sec" id="paBtn">🔔 Amaran harga</button><button class="btn sm sec" id="cBtn">Salin kod coin</button></div>`;
     if(st!=='no')h+=`<div class="card"><div class="row between" style="align-items:center"><b>Buka di platform</b><span class="muted" style="font-size:12px">kod ${esc(code)} akan disalin</span></div><div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">${PLATFORMS.map((P,i)=>P.g==='coin'?`<button class="btn sm sec" data-pfc="${i}">${esc(P.n)} ↗</button>`:'').join('')}</div></div>`;
     h+=oppSection(code,blocked);
@@ -2525,8 +2438,6 @@ function stockSheet(code,name){
   } else h+=`<div class="alert a-amber">Coin ini tiada kod dalam senarai. Coin ini belum ada dalam data ProCoin.</div>`;
   openSheet(h);
   if(!code)return;
-  $('#wBtn').onclick=()=>{if(toggleWatch(code)){stockSheet(code,name);if(TAB==='coin')renderWatch();}};
-  $('#hBtn').onclick=()=>holdingForm({code,name});
   $('#paBtn').onclick=()=>priceAlertForm(code);
   $('#cBtn').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(code);toast('Kod '+code+' disalin');};
   document.querySelectorAll('[data-pfc]').forEach(b=>b.onclick=()=>openPlatform(+b.dataset.pfc,code));
@@ -2566,70 +2477,11 @@ function showInd(A,blocked,code){
       drawChart(cv,B);bindCanvasHover(cv,B);}catch(e){$('#cvCap').textContent='Data carta tidak tersedia.';}});
 }
 
-/* ================= TAB: PORTFOLIO ================= */
-function holdingInfo(hd){
-  const lc=lastClose(hd.code);const l=livePx(hd.code);const price=l?l.p:lc?lc.c:null;
-  return {kind:'ok',price,lcDate:l?l.t:lc&&lc.d};
-}
-function refPriceFor(hd,date){
-  const c=S.cache[hd.code];if(!c)return null;
-  const b=[...c.bars].reverse().find(x=>x.d<=date);return b?b.c:null;
-}
-function rPortfolio(){
-  let h='';
-  if(S.holdings.length){let val=0,cost=0,miss=0;S.holdings.forEach(hd=>{const I=holdingInfo(hd);if(I.price==null){miss++;return;}val+=I.price*hd.qty;cost+=hd.cost*hd.qty;});
-    const pl=val-cost,pct=cost?pl/cost*100:0;
-    h+=`<div class="card"><h2>Ringkasan portfolio</h2><div class="capg"><div><small>Nilai semasa</small><b>${rm(val)}</b></div><div><small>Kos</small><b>${rm(cost)}</b></div><div><small>Untung / rugi</small><b class="${pl>=0?'up':'dn'}">${rmS(pl)}</b></div><div><small>Peratus</small><b class="${pl>=0?'up':'dn'}">${pct>=0?'+':''}${pct.toFixed(1)}%</b></div></div>${miss?`<p class="muted" style="font-size:12px;margin:6px 0 0">${miss} pegangan belum ada harga.</p>`:''}</div>`;}
-  h+=`<div class="card"><div class="row between"><h2 style="margin:0">Pegangan saya</h2><button class="btn sm" id="addH">+ Tambah</button></div>`;
-  if(!S.holdings.length)h+=`<div class="muted" style="margin-top:8px">Belum ada pegangan. Masukkan coin yang anda pegang di bursa crypto untuk pantau untung/rugi dan paras sokongan.</div>`;
-  S.holdings.forEach(hd=>{
-    const I=holdingInfo(hd);const st=I.kind==='ok'?'ok':I.kind==='na'?'na':'no';
-    const pl=I.price!=null?(I.price-hd.cost)*hd.qty:null;
-    h+=`<div style="border-top:1px solid var(--line);padding:10px 0;margin-top:8px">
-      <div class="row between"><div><b>${esc(hd.name||hd.code)}</b><div class="code">${esc(hd.code)} · ${hd.qty} unit @ ${px(hd.cost)}</div>${statusHTML(hd.code,hd.name,true)}</div>${badge(st)}</div>
-      <div class="muted">Harga terakhir: ${I.price!=null?px(I.price)+' ('+fmtD(I.lcDate)+')':'belum dimuat'}${pl!=null?` · Untung/Rugi: <b style="color:${pl>=0?'var(--green)':'var(--red)'}">${rm(pl)}</b>`:''}</div>`;
-    const XP=exitPlan(hd);
-    if(XP&&I.kind==='ok')h+=`<div class="xp${XP.hit?' hit':''}"><b>${XP.hit?'⚠️ Harga tutup di bawah paras sokongan mengekor':'Paras sokongan mengekor'}</b>
-      <div class="plan sm"><div><span>Paras sokongan (ATR)</span><b class="dn">${px(XP.trail)}</b><small>harga tertinggi ${px(XP.peak)} − 2.5× ATR</small></div>
-      <div><span>Paras atas pertama</span>${XP.last.c>=XP.target?`<b class="up">✓ dicapai</b><small>harga sudah melepasi paras ini</small>`:`<b class="up">${px(XP.target)}</b><small>kos + 2× ATR</small>`}</div>
-      <div><span>Harga terakhir</span><b>${px(XP.last.c)}</b><small>${fmtD(XP.last.d)}</small></div></div>
-      <div class="muted" style="font-size:12px">Paras ini naik mengikut harga tertinggi sejak tarikh belian dan tidak pernah turun. Harga tutup di bawahnya menandakan momentum menurun.</div></div>`;
-    h+=`<div class="row" style="margin-top:6px"><button class="btn sm sec" data-px="${hd.id}">Muat harga</button><button class="btn sm sec" data-ed="${hd.id}">Ubah</button><button class="btn sm red" data-del="${hd.id}">Padam</button></div></div>`;
-  });
-  h+=`</div><div class="disc">Harga dalam USD. Kuantiti boleh dalam pecahan (cth. 0.015 BTC). Data disimpan dalam telefon ini sahaja.</div>`;
-  $('#main').innerHTML=h;
-  $('#addH').onclick=()=>holdingForm({});
-  const need=S.holdings.filter(hd=>mk(hd.code)&&!(S.cache[hd.code]&&S.cache[hd.code].asof===mk(hd.code).d));
-  if(need.length&&!rPortfolio._busy){rPortfolio._busy=true;Promise.allSettled(need.map(hd=>getBars(hd.code))).then(()=>{rPortfolio._busy=false;if(TAB==='portfolio')render();});}
-  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Padam pegangan ini?')){S.holdings=S.holdings.filter(x=>x.id!==b.dataset.del);save();render();}});
-  document.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>holdingForm(S.holdings.find(x=>x.id===b.dataset.ed)));
-  document.querySelectorAll('[data-px]').forEach(b=>b.onclick=async()=>{const hd=S.holdings.find(x=>x.id===b.dataset.px);b.textContent='…';try{await getBars(hd.code,true);render();}catch(e){toast(e.message);b.textContent='Muat harga';}});
-}
-function holdingForm(hd){
-  hd=hd||{};const isNew=!hd.id;
-  openSheet(`<div class="row between"><h2 style="margin:0">${isNew?'Tambah':'Ubah'} pegangan</h2><button class="btn sm sec" onclick="closeSheet()">Tutup</button></div>
-   <label>Kod coin</label><input id="hc" value="${esc(hd.code||'')}" placeholder="cth. BTC">
-   <label>Nama</label><input id="hn" value="${esc(hd.name||'')}">
-   <div class="grid2"><div><label>Kuantiti (unit)</label><input id="hq" inputmode="decimal" value="${hd.qty??''}"></div><div><label>Harga purata belian (USD)</label><input id="hk" inputmode="decimal" value="${hd.cost??''}"></div></div>
-   <label>Tarikh belian</label><input id="hdt" type="date" value="${hd.buyDate||today()}">
-   <button class="btn" style="margin-top:12px;width:100%" id="hs">Simpan</button>`);
-  $('#hc').oninput=e=>{const n=nameOf(e.target.value.trim());if(n)$('#hn').value=n;};
-  $('#hs').onclick=()=>{
-    const o={id:hd.id||uid(),code:$('#hc').value.trim().toUpperCase(),name:$('#hn').value.trim(),qty:num($('#hq').value),cost:num($('#hk').value),buyDate:$('#hdt').value};
-    if(!o.code||!o.qty||!o.cost){toast('Kod, kuantiti & harga kos wajib diisi');return;}
-    if(isNew)S.holdings.push(o);else S.holdings=S.holdings.map(x=>x.id===o.id?o:x);
-    save();closeSheet();if(TAB==='portfolio')render();else toast('Disimpan ke portfolio');
-  };
-}
-
 /* ================= TAB: TETAPAN ================= */
 function download(name,content,type){
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
   catch(e){toast('Muat turun tidak disokong — guna Salin');}
 }
-/* ===== WATCHLIST (disimpan dalam telefon) ===== */
-function toggleWatch(c){if(S.watch.includes(c))S.watch=S.watch.filter(x=>x!==c);else S.watch.push(c);S.watchAt=Date.now();save();return true;}
-
 /* ===== PANDUAN PENGGUNA BARU ===== */
 const ONB=[
  ['🪙',{bm:['Selamat datang ke ProCoin','App indicator untuk <b>coin crypto besar</b> (BTC, ETH, XRP, SOL dan lain-lain).<ul><li>Harga, isyarat teknikal & berita dikemas kini <b>automatik</b> setiap hari.</li><li>Anda hanya baca & nilai keputusan.</li><li>Ini bacaan indicator, <b>bukan</b> cadangan beli atau jual. Crypto sangat turun naik.</li></ul>'],
@@ -2640,8 +2492,8 @@ const ONB=[
         en:['Crypto news','<ul><li><b>📰 Latest crypto news</b> on the home screen: the newest headlines for every coin, marked ▲ positive, ▼ negative.</li><li><b>Potential news</b>: coins with positive news today.</li><li>News tone also counts in each coin\'s <b>Meter</b>.</li><li>Negative news for your coins appears in the bell 🔔.</li></ul>']}],
  ['🤖',{bm:['Uji dengan Robot','<ul><li><b>M (Manual)</b>: buka mana-mana coin → tekan <b>✍️ Manual</b> → uji dengan wang maya (contoh $20).</li><li><b>A (Auto)</b>: di tab Robot, tekan butang <b>Robot Auto</b> → robot masuk sendiri setiap pagi.</li><li>Robot tutup bila sampai sasaran, cut loss atau 30 hari.</li><li>Semua data disimpan dalam telefon ini.</li></ul>'],
         en:['Test with the Robot','<ul><li><b>M (Manual)</b>: open any coin → tap <b>✍️ Manual</b> → test with virtual money (e.g. $20).</li><li><b>A (Auto)</b>: in the Robot tab, tap the <b>Auto Robot</b> button → the robot enters by itself every morning.</li><li>The robot closes at the target, the cut loss or after 30 days.</li><li>All data is stored on this phone.</li></ul>']}],
- ['🧰',{bm:['Alat tambahan','<ul><li><b>📊 Bitcoin</b>: keadaan pasaran crypto hari ini (menaik, mendatar, menurun).</li><li><b>🔎 Penapis</b>: cari coin ikut nilai pasaran, RSI, jarak dari paras tertinggi atau isyarat.</li><li><b>🔥 Naik/Turun</b>: coin paling banyak naik & turun (hari ini, 7 hari, 30 hari).</li><li><b>⚖️ Banding</b>: letak 2 coin sebelah-menyebelah.</li></ul>'],
-        en:['Extra tools','<ul><li><b>📊 Bitcoin</b>: today\'s crypto market condition (rising, sideways, falling).</li><li><b>🔎 Filter</b>: find coins by market value, RSI, distance from the high or signal.</li><li><b>🔥 Gainers/Losers</b>: coins that rose & fell the most (today, 7 days, 30 days).</li><li><b>⚖️ Compare</b>: put 2 coins side by side.</li></ul>']}]];
+ ['🧰',{bm:['Tab dalam app','<ul><li><b>🪙 Coin</b>: graf 1 jam, Bitcoin (harga & berita terkini), isyarat aktif, Berita Berpotensi, Isyarat Pemerhatian dan semua coin.</li><li><b>📰 News</b>: semua berita crypto dengan tanda ▲ ▼.</li><li><b>🔥 G & L</b>: coin paling banyak naik & turun (hari ini, 7 hari, 30 hari).</li><li><b>🤖 Robot</b>: ujian maya Manual & Auto.</li></ul>'],
+        en:['Tabs in the app','<ul><li><b>🪙 Coin</b>: 1-hour chart, Bitcoin (latest price & news), active signals, Potential news, Watch signals and all coins.</li><li><b>📰 News</b>: all crypto news marked ▲ ▼.</li><li><b>🔥 G & L</b>: coins that rose & fell the most (today, 7 days, 30 days).</li><li><b>🤖 Robot</b>: Manual & Auto virtual tests.</li></ul>']}]];
 function openOnboard(i){i=i||0;const old=$('#onb');if(old)old.remove();const d=document.createElement('div');d.className='help';d.id='onb';document.body.classList.add('ovl');
   const ic=ONB[i][0],[t,b]=ONB[i][1][S.settings.lang==='en'?'en':'bm'];
   d.innerHTML=`<div class="help-p onb" role="dialog" aria-modal="true"><div class="onbic">${ic}</div><h2>${t}</h2><div class="onbb">${b}</div>
@@ -2677,7 +2529,7 @@ function rTetapan(){
    <div class="kv"><span>Senarai coin</span><span>Coin crypto besar ikut nilai pasaran</span></div>
    <p class="disc"><b>Penafian:</b> ProCoin ialah alat bantu maklumat dan pengiraan, bukan nasihat pelaburan. Isyarat teknikal untuk rujukan sahaja. Crypto sangat turun naik dan anda boleh hilang semua modal. Data harga daripada penyedia pihak ketiga bersifat indikatif dan mungkin berbeza dari harga sebenar di bursa crypto. Keputusan pelaburan adalah tanggungjawab pengguna.</p>
    <a class="plink" href="privacy.html" target="_blank" rel="noopener">🔒 Privasi & Terma</a>
-   <p class="disc">ProCoin by ProKuiz · v1.0 · Watchlist, Robot dan Portfolio disimpan dalam telefon ini sahaja. Guna Sandaran data untuk pindah ke telefon lain.</p></div>`;
+   <p class="disc">ProCoin by ProKuiz · v1.0 · Robot dan tetapan disimpan dalam telefon ini sahaja. Guna Sandaran data untuk pindah ke telefon lain.</p></div>`;
   $('#main').innerHTML=h;
   $('#syncB').onclick=()=>syncData(true);
   bindAlertSettings();bindDisplay();

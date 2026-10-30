@@ -55,13 +55,13 @@ def main():
         n = pg.evaluate("Object.keys(S.market.stocks).length")
         check(n > a.min, f"data pasaran dimuat ({n} coin)")
         check(pg.locator(".hero").count() > 0, "skrin utama: bahagian utama ada")
-        check(pg.locator(".tools3").count() > 0, "skrin utama: Penapis / Kalendar / Banding ada")
-        for fn in ["openScreener()", "openCal()", "CMP=[];openCompare()"]:
+        check(pg.locator(".klb").count() > 0, "skrin utama: kotak Bitcoin ada")
+        for fn in ["openSummary()", "openKlci()"]:
             pg.evaluate(fn)
-            pg.wait_for_timeout(300)
-            check(pg.locator("#sheetBody").inner_text().strip() != "", f"pop up {fn.split(';')[-1]} dibuka")
-            pg.evaluate("closeSheet()")
-        for tab in ["news", "robot", "portfolio", "tetapan", "coin"]:
+            pg.wait_for_timeout(400)
+            check(pg.evaluate("!!(document.querySelector('#help')||document.querySelector('#sheet.on'))"), f"pop up {fn} dibuka")
+            pg.evaluate("closeSheet();document.getElementById('help')&&document.getElementById('help').remove()")
+        for tab in ["news", "gl", "robot", "tetapan", "coin"]:
             pg.evaluate(f"goTab('{tab}')")
             pg.wait_for_timeout(300)
             check(len(pg.inner_text("#main").strip()) > 20, f"tab {tab} dipaparkan")

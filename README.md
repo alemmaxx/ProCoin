@@ -50,13 +50,15 @@ GitHub sudah emel anda bila robot gagal. Untuk emel tambahan dari Pemantau siste
 
 ## Ciri dalam app
 
-- Skrin utama: coin pilihan, carta (30m hingga tahunan), keadaan pasaran (Bitcoin), Penapis, Naik/Turun, Banding, **Isyarat aktif**, **Berita Berpotensi**, **Isyarat Pemerhatian**, watchlist, semua coin ikut nilai pasaran.
-- Tab **News**: semua tajuk berita crypto 7 hari (▲ positif / ▼ negatif / • neutral), tapis ikut nada, coin saya atau coin tertentu.
-- **Berita Berpotensi** hanya berita positif yang kukuh: peristiwa sebenar (kelulusan, aliran masuk dana, penyenaraian, kerjasama, pelancaran), bukan ramalan/andaian ("if", "could", soalan), dan tiada berita negatif pada hari sama. Ini yang digunakan Robot Auto.
-- Setiap coin: Meter ProCoin (isyarat 40% + skor teknikal 40% + nada berita 20%), isyarat & paras harga, rekod backtest, bacaan teknikal, maklumat coin (nilai pasaran, bekalan, ATH), berita, kongsi gambar.
-- Robot: Manual & Auto (ujian maya, modal dibahagi 5). Robot Auto berjalan dalam telefon setiap kali app dibuka.
-- Portfolio: untung/rugi dalam USD, paras sokongan mengekor.
-- Amaran (loceng) & notifikasi telefon, dwibahasa BM | EN.
+Tab: **Coin · News · G & L · Robot · Tetapan**
+
+- **Coin**: graf 1 jam terus (boleh tukar 30m hingga tahunan), kotak Bitcoin dengan harga masa nyata & berita BTC terkini, **Isyarat aktif**, **Berita Berpotensi**, **Isyarat Pemerhatian**, dan grid penuh semua coin & isyarat teknikal.
+- **News**: semua tajuk berita crypto 7 hari (▲ positif / ▼ negatif / • neutral), tapis ikut nada atau coin.
+- **G & L**: Gainers & Losers (hari ini, 7 hari, 30 hari) guna harga terkini.
+- **Robot**: Manual & Auto (ujian maya, modal dibahagi 5). Robot Auto masuk untuk Isyarat Kuat dan Berita Berpotensi yang kukuh.
+- **Berita Berpotensi** hanya berita positif yang kukuh: peristiwa sebenar (kelulusan, aliran masuk dana, penyenaraian, kerjasama, pelancaran), bukan ramalan/andaian ("if", "could", soalan), dan tiada berita negatif pada hari sama.
+- Setiap coin: Meter ProCoin (isyarat 40% + skor teknikal 40% + nada berita 20%), isyarat & paras harga, rekod backtest, bacaan teknikal, maklumat coin (nilai pasaran, bekalan, ATH), berita, amaran harga, kongsi gambar.
+- Harga masa nyata dari CoinGecko setiap 1 minit bila app dibuka. Amaran (loceng) & notifikasi telefon, dwibahasa BM | EN.
 
 ## Penting sebelum dilancarkan kepada orang awam
 
