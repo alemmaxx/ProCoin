@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
   push:
     branches: [main]
-    paths: ["scripts/research.py", "scripts/backtest.py"]
+    paths: ["scripts/research.py", "scripts/backtest.py", "scripts/strategies.py"]
 
 permissions:
   contents: write

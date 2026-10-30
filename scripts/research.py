@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import backtest as BT  # noqa: E402
 from common import ema, ema_sparse, rsi  # noqa: E402
 import market  # noqa: E402
+import strategies as ST  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 OUT = os.path.join(ROOT, "data", "research.json")
@@ -297,7 +298,62 @@ def main():
     except Exception as e:
         print("! model gagal:", e)
 
-    out = {"asof": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "start": start, "end": ev[-1]["d"] if ev else None,
+    # --- kalibrasi % peluang: kebarangkalian sejarah (walk-forward) vs kadar menang sebenar
+    calib_p = []
+    for lo, hi in [(0, .35), (.35, .45), (.45, .55), (.55, .65), (.65, 1.01)]:
+        xs = [e for e in ev if lo <= e["p_wf"] < hi]
+        if xs:
+            calib_p.append({"lo": round(lo * 100), "hi": min(100, round(hi * 100)), "n": len(xs),
+                            "pred": round(sum(e["p_wf"] for e in xs) / len(xs) * 100),
+                            "act": round(sum(1 for e in xs if e["res"] == "W") / len(xs) * 100),
+                            "avg": round(sum(e["ret"] for e in xs) / len(xs), 2)})
+
+    # --- strategi crypto baharu (peraturan tetap, tiada parameter dilatih)
+    btc_rows = px["BTC"]
+    btc_cl = [float(r[4]) for r in btc_rows]
+    btc_e200 = ema(btc_cl, 200)
+    btc_up = {r[0]: (btc_e200[i] is not None and btc_cl[i] > btc_e200[i]) for i, r in enumerate(btc_rows)}
+    mid = None
+    strat = []
+    for key, S in ST.STRATS.items():
+        alltr = []
+        for code, rows in px.items():
+            o = [float(r[1] or r[4]) for r in rows]; h = [float(r[2] or r[4]) for r in rows]
+            l = [float(r[3] or r[4]) for r in rows]; c = [float(r[4]) for r in rows]; v = [float(r[5] or 0) for r in rows]
+            dates = [r[0] for r in rows]
+            trs, _, _ = ST.run_strategy(key, o, h, l, c, v, btc_ok=lambda t, d=dates: btc_up.get(d[t], False))
+            for tr in trs:
+                d = dates[tr["t"]]
+                if d >= start:
+                    alltr.append({"d": d, "ret": tr["ret"] * 100, "days": tr["days"], "res": "W" if tr["ret"] > 0 else "L"})
+        alltr.sort(key=lambda x: x["d"])
+        if not alltr:
+            continue
+        if mid is None:
+            mid = (date.fromisoformat(start) + (date.fromisoformat(ev[-1]["d"]) - date.fromisoformat(start)) / 2).isoformat()
+        s_all, s1, s2 = summ(alltr), summ([x for x in alltr if x["d"] < mid]), summ([x for x in alltr if x["d"] >= mid])
+        years = {}
+        for x in alltr:
+            years.setdefault(x["d"][:4], []).append(x)
+        ys = {y: summ(v) for y, v in sorted(years.items())}
+        pos_years = sum(1 for y in ys.values() if (y.get("avg") or 0) > 0)
+        proven = bool(s_all["n"] >= 50 and (s_all.get("pf") or 0) >= 1.15 and (s1.get("avg") or 0) > 0 and (s2.get("avg") or 0) > 0
+                      and pos_years >= max(2, round(len(ys) * 0.6)))
+        strat.append({"key": key, "name": S["name"], "all": s_all, "h1": s1, "h2": s2, "years": ys, "proven": proven,
+                      "days": round(sum(x["days"] for x in alltr) / len(alltr), 1)})
+        print(f"  strategi {key}: {s_all} | separuh 1 {s1.get('avg')} | separuh 2 {s2.get('avg')} | terbukti {proven}")
+    base_tr = [{"d": e["d"], "ret": e["ret"], "res": e["res"], "days": 0} for e in ev]
+    strat.insert(0, {"key": "base", "name": "Isyarat asal (4 corak, sasaran 2× ATR, cut loss 1.25× ATR)", "all": summ(base_tr),
+                     "h1": summ([x for x in base_tr if mid and x["d"] < mid]), "h2": summ([x for x in base_tr if mid and x["d"] >= mid]),
+                     "years": {}, "proven": False, "days": None})
+    bh = {}
+    for code in ("BTC", "ETH"):
+        rows = [r for r in px.get(code, []) if r[0] >= start]
+        if rows:
+            bh[code] = round((float(rows[-1][4]) / float(rows[0][4]) - 1) * 100, 1)
+
+    out = {"asof": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "start": start, "mid": mid,
+           "calib_p": calib_p, "strat": strat, "hold": bh, "end": ev[-1]["d"] if ev else None,
            "fee": BT.FEE, "h": BT.H, "tgt": BT.TGT_ATR, "stp": BT.STP_ATR, "coins": len(px), "n": len(ev),
            "fng_ok": bool(fng), "h4_coins": len([c for c in H4 if H4[c]]),
            "groups": groups, "rank": rank, "model": model}
