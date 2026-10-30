@@ -1,0 +1,73 @@
+{
+ "asof": "2026-10-28",
+ "note": "avg = purata pulangan setiap dagangan (%) selepas kos",
+ "results": {
+  "semua": {
+   "naik": {
+    "n": 117,
+    "w": 43,
+    "l": 74,
+    "to": 0,
+    "win": 36.8,
+    "pnl": -16.39,
+    "avg": -0.7,
+    "days": 4.4,
+    "best": 19.92,
+    "worst": -14.78
+   },
+   "datar": {
+    "n": 87,
+    "w": 32,
+    "l": 52,
+    "to": 3,
+    "win": 36.8,
+    "pnl": 2.35,
+    "avg": 0.14,
+    "days": 8.0,
+    "best": 31.25,
+    "worst": -16.63
+   },
+   "turun": {
+    "n": 18,
+    "w": 4,
+    "l": 12,
+    "to": 2,
+    "win": 22.2,
+    "pnl": -9.09,
+    "avg": -2.53,
+    "days": 11.8,
+    "best": 15.05,
+    "worst": -10.53
+   }
+  },
+  "isyarat_kuat": {
+   "naik": {
+    "n": 10,
+    "w": 2,
+    "l": 8,
+    "to": 0,
+    "win": 20.0,
+    "pnl": -9.3,
+    "avg": -4.65,
+    "days": 4.8,
+    "best": 9.36,
+    "worst": -11.67
+   },
+   "datar": {
+    "n": 5,
+    "w": 2,
+    "l": 2,
+    "to": 1,
+    "win": 40.0,
+    "pnl": 1.57,
+    "avg": 1.57,
+    "days": 9.8,
+    "best": 11.51,
+    "worst": -5.38
+   },
+   "turun": {
+    "n": 0
+   }
+  }
+ }
+}
