@@ -29,9 +29,10 @@ PROVIDER = "yfinance"
 MIN_VALUE = 1_000_000   # nilai dagangan purata 20 hari minimum (USD)
 # Strategi yang digunakan untuk isyarat (dibuktikan dalam robot kajian, data/research.json):
 #   A = Isyarat aktif (Isyarat Kuat), B = Isyarat Pemerhatian
-USE = {"rsi2": "A", "brk20": "B"}
-RULE = {"rsi2": "Keluar bila harga tutup atas EMA5, atau selepas 10 hari. Cut loss 2.5× ATR.",
-        "brk20": "Trailing stop 3× ATR di bawah harga tertinggi sejak beli (naik ikut harga, tidak turun)."}
+# Dipilih oleh kajian penerokaan (scripts/explore.py) dengan kos sebenar runcit 1.2% pergi-balik
+USE = {"drop15": "A", "ema2050": "B"}
+RULE = {"drop15": "Masuk bila coin jatuh lebih 15% dalam 3 hari tetapi masih atas EMA200. Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3× ATR.",
+        "ema2050": "Masuk bila EMA20 lintas atas EMA50 (harga atas EMA200). Pegang selagi trend kekal; keluar bila EMA20 jatuh bawah EMA50."}
 
 
 def sstats(trs):
@@ -254,7 +255,7 @@ def main():
                 ops = []
                 o_ = [float(r[1] or r[4]) for r in rows]; h_ = [float(r[2] or r[4]) for r in rows]
                 L = len(closes) - 1
-                e5 = _ema(closes, 5)
+                e10, e50L = _ema(closes, 10), _ema(closes, 50)
                 for k, grade in USE.items():
                     trs, pos = SR.get(c, {}).get(k, ([], None))
                     if not pos:
@@ -265,12 +266,10 @@ def main():
                     if ago > S["max"]:
                         continue
                     en = closes[-1] if ago == 0 else (o_[t + 1] or closes[t])
-                    stop = en - S["k"] * at
-                    if k == "brk20" and ago > 0:
-                        stop = max(stop, max(h_[t + 1:]) - S["k"] * at)
+                    stop = en - S["k"] * at if S.get("k") else 0.0   # ema2050: tiada stop ATR, keluar ikut trend
                     st = PS[k]
-                    if k == "rsi2":
-                        tg = max(e5[L] or en * 1.01, en * 1.005)
+                    if k == "drop15":
+                        tg = max(e10[L] or en * 1.01, en * 1.005)
                     else:
                         tg = en * (1 + (st.get("aw") or 5) / 100)
                     ops.append({"k": k, "st": k, "g": grade, "p": st["p"], "n": st["n"], "w": st["w"], "cf": st["cf"],
@@ -304,7 +303,7 @@ def main():
         "bt": {"h": BT.H, "tgt": BT.TGT_ATR, "stp": BT.STP_ATR, "fee": BT.FEE},
         "setups": {**{k: {"name": BT.SETUPS[k], "n": g["n"], "p": round(prior[k] * 100), "md": g["md"],
                           "d25": g["d25"], "d75": g["d75"], "ev": g["ev"]} for k, g in gstats.items()},
-                   **{k: {"name": ST.STRATS[k]["name"], **PS[k], "grade": USE[k], "rule": RULE[k], "kATR": ST.STRATS[k]["k"],
+                   **{k: {"name": ST.STRATS[k]["name"], **PS[k], "grade": USE[k], "rule": RULE[k], "kATR": ST.STRATS[k].get("k"),
                           "max": ST.STRATS[k]["max"]} for k in USE}},
         "strat": {k: USE[k] for k in USE},
     }
