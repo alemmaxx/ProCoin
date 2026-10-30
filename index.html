@@ -402,6 +402,10 @@ body.ovl{overflow:hidden}
 .hctip b{font-size:13px;color:var(--gold)}
 canvas#cv{touch-action:pan-y;cursor:crosshair}
 @media (min-width:820px){.hero .hc{z-index:0}.hero>*:not(.hc):not(.shade){position:relative;z-index:1}}
+.fchips{display:inline-flex;gap:4px;margin-top:4px}.fchip{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--card2);color:var(--muted)}.fchip.ok{color:var(--green)}.fchip.no{color:var(--red)}
+.frow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.frow .fic{width:20px;text-align:center;font-weight:800}.frow .fl{flex:1;min-width:0}.frow b{text-align:right}
+.rtab{overflow-x:auto;margin:10px 0}.rtab table{width:100%;border-collapse:collapse;font-size:12.5px}.rtab th{color:var(--muted);font-weight:600;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}.rtab th:first-child,.rtab td:first-child{text-align:left}
+.rtab td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}.rtab td small{display:block;color:var(--muted);font-size:10.5px}.rtab tr.rb td{font-weight:700;background:var(--card2)}
 /* ProCoin: rel kad dipaparkan penuh dalam grid (tiada skrol ke tepi) */
 .rail{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;overflow:visible;scroll-snap-type:none;padding-bottom:4px}
 .rail .poster,.rail .poster.wide{width:auto!important;aspect-ratio:3/4}
@@ -544,6 +548,8 @@ async function syncData(manual){
     if(!S.market||S.market.meta.generated!==m.meta.generated){S.market=m;changed=true;
       S.symbols=Object.entries(m.stocks).map(([code,v])=>({code,name:v.n}));S.symbolsDate=m.meta.asof;}
     try{const r6=await dfetch('i/index.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(r6.ok){S.intra=(await r6.json()).codes||[];}}catch(e){}
+    try{const rf=await dfetch('features.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(rf.ok){S.feat=await rf.json();}}catch(e){}
+    try{const rr=await dfetch('research.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(rr.ok){const R=await rr.json();if(R&&R.groups){if(R.model)delete R.model.live;S.research=R;}}}catch(e){}
     try{const r7=await dfetch('fund.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(r7.ok){S.fund=await r7.json();}}catch(e){}
     // Berita dikemas kini setiap 2 jam (robot berita) — ambil terus dari repo; jika gagal, guna salinan laman
     try{let r5=null;if(location.protocol.startsWith('http')&&!/localhost/.test(location.hostname))r5=await fetch('https://raw.githubusercontent.com/alemmaxx/ProCoin/main/data/news.json?t='+Math.floor(Date.now()/6e5)).catch(()=>null);
@@ -686,11 +692,11 @@ function probBar(p,be){return `<div class="pbar"><span style="width:${p}%"></spa
 function opCard(code,op,m){
   const be=breakeven(op);const tp=(op.tg/op.en-1)*100,sp=(1-op.sl/op.en)*100;const H=BTH().h;
   const short=(op.md||0)<5;const edge=op.p/100-be;
-  const RS=rateSignal({...op});
+  const RS=rateSignal({...op,code});
   return `<div class="opc"><div class="row between"><div><b>${esc(setupName(op.k))}</b><div class="muted">${op.ago?`Isyarat ${op.ago} hari lalu`:'Isyarat hari ini'}${short?' · jangka pendek':''}</div></div></div>
    ${weakNote(code,op.k)?`<div class="wnote" style="margin-top:8px">ℹ️ ${weakNote(code,op.k)}</div>`:''}
    <div class="opp"><span class="big">${op.p}%</span><span class="muted">kali harga sampai paras atas sebelum paras bawah, dalam sejarah coin ini</span></div>
-   <div style="margin:0 0 8px">${rateHTML({...op})}</div>
+   <div style="margin:0 0 8px">${rateHTML({...op,code})}</div>
    ${probBar(op.p,be)}<div class="muted" style="font-size:12px">Garis putih = paras neutral ${(be*100).toFixed(0)}%, iaitu kadar yang dijangka jika pergerakan harga rawak. Peratus melepasi garis bermakna isyarat ini pernah lebih kuat daripada rawak.</div>
    <div class="plan">
     <div><span>Harga semasa</span><b>${px(op.en)}</b></div>
@@ -706,7 +712,7 @@ function oppSection(code,blocked){
   const ops=opsFor(code);
   let h=`<div class="card"><h2>Isyarat & paras harga</h2>`;
   h+=ops.length?ops.map(o=>opCard(code,o,m)).join(''):`<p class="muted" style="margin:0 0 6px">Tiada isyarat teknikal aktif untuk coin ini dalam 3 hari terakhir.</p>`;
-  h+=`<div id="btHist"></div><details style="margin-top:10px"><summary class="muted">Bagaimana angka ini dikira?</summary><p class="muted">Robot menguji setiap kali isyarat yang sama berlaku dalam sejarah ~5 tahun coin ini. Bermula dari harga buka esoknya, robot mencatat sama ada harga sampai paras atas (${BTH().tgt}× ATR) atau paras bawah (${BTH().stp}× ATR) dahulu, atau tiada dalam ${BTH().h} hari. Kos ${(BTH().fee*100).toFixed(1)}% diambil kira. Untuk coin bersampel kecil, kebarangkalian ditarik ke arah purata pasaran supaya tidak terlebih yakin. Ini statistik sejarah, bukan cadangan beli atau jual.</p></details></div>`;
+  h+=`</div>`+filterCardHTML(code)+`<div class="card"><div id="btHist"></div><details style="margin-top:10px"><summary class="muted">Bagaimana angka ini dikira?</summary><p class="muted">Robot menguji setiap kali isyarat yang sama berlaku dalam sejarah ~5 tahun coin ini. Bermula dari harga buka esoknya, robot mencatat sama ada harga sampai paras atas (${BTH().tgt}× ATR) atau paras bawah (${BTH().stp}× ATR) dahulu, atau tiada dalam ${BTH().h} hari. Kos ${(BTH().fee*100).toFixed(1)}% diambil kira. Untuk coin bersampel kecil, kebarangkalian ditarik ke arah purata pasaran supaya tidak terlebih yakin. Ini statistik sejarah, bukan cadangan beli atau jual.</p></details></div>`;
   return h;
 }
 function btHistHTML(bt){
@@ -758,13 +764,75 @@ function weakNote(code,k){
 }
 
 /* ================= PENILAIAN ISYARAT (A/B/C) ================= */
+/* ===== PENAPIS ISYARAT (dibuktikan dengan backtest — lihat 🧪 Keputusan backtest) =====
+   ACTIVE_FILTERS: penapis yang terbukti menaikkan purata pulangan Isyarat Kuat dalam ujian walk-forward.
+   Isyarat Kuat yang gagal penapis aktif diturunkan ke Isyarat Pemerhatian (tidak dimasukkan Robot Auto). */
+const ACTIVE_FILTERS=[];
+const FILTER_DEF={
+  btc_ok:{l:'BTC tidak menurun',f:F=>F.btc!=='turun',v:F=>({naik:'BTC menaik',datar:'BTC mendatar',turun:'BTC menurun'}[F.btc]||'-')},
+  btc_up:{l:'BTC menaik',f:F=>F.btc==='naik',v:F=>({naik:'BTC menaik',datar:'BTC mendatar',turun:'BTC menurun'}[F.btc]||'-')},
+  h4_up:{l:'Trend 4 jam menaik',f:(F,C)=>C.h4===true,na:(F,C)=>C.h4==null,v:(F,C)=>C.h4==null?'tiada data':C.h4?'menaik':'tidak menaik'},
+  rs_pos:{l:'Lebih kuat daripada BTC (30 hari)',f:(F,C)=>(C.rs30||0)>0,na:(F,C)=>C.rs30==null,v:(F,C)=>C.rs30==null?'-':(C.rs30>0?'+':'')+C.rs30+'%'},
+  fng_lt75:{l:'Fear & Greed bawah 75',f:F=>F.fng&&F.fng.v<75,na:F=>!F.fng,v:F=>F.fng?F.fng.v+' · '+fngWord(F.fng.v):'-'},
+  fng_le50:{l:'Fear & Greed 50 ke bawah',f:F=>F.fng&&F.fng.v<=50,na:F=>!F.fng,v:F=>F.fng?F.fng.v+' · '+fngWord(F.fng.v):'-'}};
+function fngWord(v){return v<25?'Sangat takut':v<45?'Takut':v<=55?'Neutral':v<=75?'Tamak':'Sangat tamak';}
+function featC(code){return (S.feat&&S.feat.coins&&S.feat.coins[code])||{};}
+/* null = tiada data ciri (penapis tidak dikenakan) */
+function filterFails(code){if(!S.feat||!ACTIVE_FILTERS.length||!code)return [];const F=S.feat,C=featC(code);
+  return ACTIVE_FILTERS.filter(k=>{const d=FILTER_DEF[k];if(!d)return false;if(d.na&&d.na(F,C))return false;return !d.f(F,C);}).map(k=>FILTER_DEF[k].l);}
+function filterChipsHTML(code){if(!S.feat)return '';const F=S.feat,C=featC(code);
+  const it=[['BTC',F.btc==='naik'?true:F.btc==='turun'?false:null],['4J',C.h4==null?undefined:C.h4],['RS',C.rs30==null?undefined:C.rs30>0]];
+  return `<span class="fchips">${it.filter(x=>x[1]!==undefined).map(([l,ok])=>`<span class="fchip ${ok===true?'ok':ok===false?'no':'na'}">${l} ${ok===true?'✓':ok===false?'✕':'–'}</span>`).join('')}</span>`;}
+function filterCardHTML(code,inner){if(!S.feat)return '';const F=S.feat,C=featC(code),m=mk(code);
+  const row=(ic,l,v,ok,act)=>`<div class="frow"><span class="fic ${ok===true?'up':ok===false?'dn':''}">${ic}</span><span class="fl">${l}${act?' <small class="badge b-gold">aktif</small>':''}</span><b class="${ok===true?'up':ok===false?'dn':''}">${v}</b></div>`;
+  let h=row(F.btc==='naik'?'✓':F.btc==='turun'?'✕':'–','Keadaan Bitcoin',FILTER_DEF.btc_ok.v(F),F.btc==='naik'?true:F.btc==='turun'?false:null,ACTIVE_FILTERS.includes('btc_ok')||ACTIVE_FILTERS.includes('btc_up'));
+  h+=row(C.h4==null?'–':C.h4?'✓':'✕','Trend carta 4 jam',FILTER_DEF.h4_up.v(F,C),C.h4==null?null:C.h4,ACTIVE_FILTERS.includes('h4_up'));
+  h+=row(C.rs30==null?'–':C.rs30>0?'✓':'✕','Kekuatan berbanding BTC (30 hari)',FILTER_DEF.rs_pos.v(F,C),C.rs30==null?null:C.rs30>0,ACTIVE_FILTERS.includes('rs_pos'));
+  if(F.fng)h+=row(F.fng.v<=55?'✓':F.fng.v>=75?'✕':'–','Fear & Greed (seluruh pasaran)',FILTER_DEF.fng_lt75.v(F),F.fng.v>=75?false:F.fng.v<=55?true:null,ACTIVE_FILTERS.includes('fng_lt75')||ACTIVE_FILTERS.includes('fng_le50'));
+  if(C.fund!=null)h+=row(C.fund>0.03?'✕':C.fund<0?'✓':'–','Funding rate (perpetual)',(C.fund>0?'+':'')+C.fund+'%',C.fund>0.03?false:C.fund<0?true:null,false);
+  if(C.oi!=null)h+=row('·','Open interest',bigUSD(C.oi),null,false);
+  const ff=filterFails(code);
+  if(ff.length&&bestOp(code))h+=`<div class="alert a-amber" style="margin:8px 0 0">Isyarat diturunkan ke Pemerhatian: ${esc(ff.join(', '))}.</div>`;
+  const body=`${h}<p class="muted" style="font-size:12px;margin:8px 0 0">Bacaan konteks pasaran. Funding positif tinggi = ramai trader "long" (risiko jatuh mendadak). Dalam backtest, tiada penapis ini yang terbukti meningkatkan ketepatan isyarat, jadi ia tidak mengubah gred isyarat. Lihat 🧪 Keputusan backtest.${S.feat.asof?` Dikira ${esc(S.feat.asof)} UTC.`:''}</p><button class="btn sm sec" style="margin-top:8px;width:100%" onclick="openResearch()">🧪 Keputusan backtest penapis</button>`;
+  return inner?`<h3>Penapis isyarat</h3><div class="card" style="margin:0">${body}</div>`:`<div class="card"><h2>Penapis isyarat</h2>${body}</div>`;}
+/* Helaian keputusan backtest */
+let RSG=0;
+function openResearch(){const R=S.research;
+  if(!R){openSheet('<h2>🧪 Keputusan backtest penapis</h2><p class="muted">Keputusan belum tersedia. Robot kajian berjalan setiap Ahad.</p>');return;}
+  const G=R.groups[RSG]||R.groups[0];const base=G.base||{};
+  const f=v=>v==null?'-':(v>0?'+':'')+v+'%';
+  const row=r=>{const better=r.n&&base.n&&r.avg!=null&&r.avg>base.avg;const act=ACTIVE_FILTERS.includes(r.key);
+    return `<tr class="${r.key==='semua'||r.key==='h4_base'?'rb':''}"><td>${esc(r.name)}${act?' <span class="badge b-gold">aktif</span>':''}</td><td>${r.n||0}</td><td>${r.win!=null?r.win+'%':'-'}</td><td class="${r.avg==null?'':r.avg>=0?'up':'dn'}">${f(r.avg)}${r.ci!=null?`<small>±${r.ci}</small>`:''}</td><td>${r.pf??'-'}</td></tr>`;};
+  const M=R.model;const rk=R.rank||{};
+  openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">🧪 Keputusan backtest</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>
+   <p class="muted" style="font-size:12.5px;margin:6px 0 8px">${R.coins} coin · ${fmtD(R.start)} hingga ${fmtD(R.end)} · sasaran ${R.tgt}× ATR, cut loss ${R.stp}× ATR, ${R.h} hari, kos ${(R.fee*100).toFixed(1)}%. Walk-forward: setiap isyarat dinilai guna data sebelum harinya sahaja.</p>
+   <div class="nfil gl3">${R.groups.map((g,i)=>`<button class="btn sm ${i===RSG?'gold':'sec'}" data-rg="${i}">${esc(g.name.replace(' (tanpa gred)',''))}</button>`).join('')}</div>
+   ${(()=>{const sig=G.rows.filter(r=>r.key!=='semua'&&r.key!=='h4_base'&&r.n>=30&&r.ci!=null&&base.avg!=null&&r.avg-r.ci>base.avg);
+     return `<div class="alert ${sig.length?'a-green':'a-amber'}" style="margin:10px 0 0"><b>Kesimpulan:</b> ${sig.length?`Terbukti lebih baik (melepasi julat keyakinan): ${sig.map(r=>esc(r.name)).join(', ')}.`:`Tiada penapis yang terbukti meningkatkan purata pulangan secara bermakna — perbezaannya masih dalam julat keyakinan. Penapis tidak diaktifkan supaya tidak "overfit".`} Asas: ${base.n||0} isyarat, ${base.win??'-'}% menang, purata ${f(base.avg)} setiap isyarat.</div>`;})()}
+   <div class="rtab"><table><tr><th>Penapis</th><th>n</th><th>Menang</th><th>Purata</th><th>PF</th></tr>${G.rows.map(row).join('')}</table></div>
+   <p class="muted" style="font-size:12px">Purata = pulangan purata setiap isyarat selepas kos (± julat keyakinan 95%). PF = jumlah untung ÷ jumlah rugi (lebih 1 = untung). Sampel kecil (n bawah 30) belum boleh dipercayai sepenuhnya.</p>
+   ${rk.ev?`<h3>Ranking: jangkaan untung (EV) vs % menang</h3><div class="rtab"><table><tr><th></th><th>n</th><th>Menang</th><th>Purata</th></tr>
+     <tr><td>EV sejarah tinggi (separuh atas)</td><td>${rk.ev.high.n}</td><td>${rk.ev.high.win}%</td><td>${f(rk.ev.high.avg)}</td></tr><tr><td>EV sejarah rendah</td><td>${rk.ev.low.n}</td><td>${rk.ev.low.win}%</td><td>${f(rk.ev.low.avg)}</td></tr>
+     <tr><td>% menang tinggi (separuh atas)</td><td>${rk.p.high.n}</td><td>${rk.p.high.win}%</td><td>${f(rk.p.high.avg)}</td></tr><tr><td>% menang rendah</td><td>${rk.p.low.n}</td><td>${rk.p.low.win}%</td><td>${f(rk.p.low.avg)}</td></tr></table></div>`:''}
+   ${M?`<h3>Model gabungan (diuji pada data yang tidak dilihat)</h3><div class="card" style="margin:0">
+     <div class="kv"><span>Latihan / ujian</span><b>${M.n_train} / ${M.n_test} isyarat</b></div>
+     <div class="kv"><span>Ketepatan ranking (AUC)</span><b>${M.auc} <small class="muted">vs ${M.auc_pwf} tanpa model</small></b></div>
+     <div class="kv"><span>Semua isyarat (tempoh ujian)</span><b>${f(M.test_all.avg)} · ${M.test_all.win}% menang</b></div>
+     <div class="kv"><span>20% teratas ikut model</span><b>${f(M.test_top20.avg)} · ${M.test_top20.win}% menang</b></div>
+     ${M.test_A&&M.test_A.n?`<div class="kv"><span>Isyarat Kuat (tempoh ujian)</span><b>${f(M.test_A.avg)} · n ${M.test_A.n}</b></div>`:''}
+     <p class="muted" style="font-size:12px;margin:8px 0 4px">Kalibrasi (ramalan model vs sebenar, % isyarat untung):</p>
+     ${(M.calib||[]).map(c=>`<div class="kv"><span>Ramalan ${c.band}% (n ${c.n})</span><b>${c.pred}% → ${c.act}%</b></div>`).join('')}
+     <p class="muted" style="font-size:12px;margin:8px 0 0">AUC 0.5 = sama seperti rawak; lebih tinggi = model lebih baik menyusun isyarat.</p></div>`:''}
+   <div class="alert a-amber" style="margin:12px 0 0">Nota: % peluang pada setiap isyarat dikira daripada keseluruhan sejarah coin itu, jadi ia cenderung terlebih yakin. Ujian walk-forward di atas (hanya guna data sebelum hari isyarat) ialah ukuran yang lebih jujur.</div>
+   <div class="disc">Keputusan sejarah, bukan jaminan. Dikemas kini setiap Ahad (${fmtD(R.asof)}).</div>`);
+  document.querySelectorAll('[data-rg]').forEach(b=>b.onclick=()=>{RSG=+b.dataset.rg;openResearch();});}
 function rateSignal(x){
   // x: {p, en, tg, sl, n (sampel), w, ev, k}
   const fee=BTH().fee;const tp=x.tg/x.en-1,sp=1-x.sl/x.en,be=(sp+fee)/(tp+sp),edge=x.p/100-be;
   const n=x.n==null?null:+x.n;
   let g;
   if(edge<=0||(x.ev!=null&&x.ev<=0))g='D';
-  else if(edge>=0.10&&(n==null||n>=8))g='A';
+  else if(edge>=0.10&&(n==null||n>=8))g=(x.code&&filterFails(x.code).length)?'B':'A';
   else if(edge>=0.05&&(n==null||n>=5))g='B';
   else g='C';
   const G={A:['Isyarat Kuat','b-ok','Dalam sejarah coin ini, isyarat ini jelas lebih kerap berjaya daripada gagal, dan disokong banyak contoh.'],
@@ -1030,7 +1098,7 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
   const size=()=>{if(free==null)return +a.stake||20;const per=Math.round(eq/5*100)/100;const amt=free>=per?per:(free>=per*.5?Math.round(free*100)/100:null);if(amt!=null)free-=amt;return amt;};
   const r6=v=>+(+v).toPrecision(6),now=new Date().toISOString(),add=[];
   if(a.sig){const L=[];Object.entries(M.stocks).forEach(([c,v])=>{if(!v.op||v.liq===0||!v.c)return;let best=null;
-      v.op.forEach(o=>{if((o.ago||0)!==0||!(o.ev>0)||!o.en)return;const tp=o.tg/o.en-1,sp=1-o.sl/o.en,edge=o.p/100-(sp+fee)/(tp+sp);if(edge>=.10&&(o.n==null||o.n>=8)&&(!best||edge>best.e))best={e:edge,o};});
+      v.op.forEach(o=>{if((o.ago||0)!==0||!(o.ev>0)||!o.en)return;const tp=o.tg/o.en-1,sp=1-o.sl/o.en,edge=o.p/100-(sp+fee)/(tp+sp);if(edge>=.10&&(o.n==null||o.n>=8)&&!filterFails(c).length&&(!best||edge>best.e))best={e:edge,o};});
       if(best)L.push({code:c,name:v.n,c:v.c,o:best.o,e:best.e,champ:!!(v.va&&v.sc/v.va>=.75)});});
     L.sort((x,y)=>y.e-x.e).forEach(x=>{const id=`auto-${x.code}-${asof}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
       add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(x.c),stake:amt,tg:r6(x.c*(1+tpp/100)),sl:r6(x.c*x.o.sl/x.o.en),tp:tpp,md:x.o.md?Math.round(x.o.md):null,hz:x.o.md?Math.max(1,Math.round(x.o.md)):null,at:now});have.add(x.code);});}
@@ -1195,7 +1263,7 @@ function openSummary(){
   const L=topSignals(60);
   const grp=[['A','Isyarat Kuat','b-ok'],['B','Isyarat Sederhana','b-warn']];
   const by={A:[],B:[]};L.forEach(x=>{const g=rateSignal(x).g;(g==='A'?by.A:g==='D'?null:by.B)?.push(x);});
-  const row=x=>`<button class="smr" data-sc="${esc(x.code)}"><span><b>${esc(shortName(x.name))}</b> <span class="code">${esc(x.code)}</span></span><span class="smt">${x.passed?'⏳ ':''}<b>${x.p}%</b></span></button>`;
+  const row=x=>`<button class="smr" data-sc="${esc(x.code)}"><span><b>${esc(shortName(x.name))}</b> <span class="code">${esc(x.code)}</span><br>${filterChipsHTML(x.code)}</span><span class="smt">${x.passed?'⏳ ':''}<b>${x.p}%</b></span></button>`;
   let body='';
   grp.forEach(([g,l,c])=>{if(!by[g].length)return;body+=`<h3 class="smh"><span class="badge ${c}">${l}</span> <small>${by[g].length} coin</small></h3>${by[g].map(row).join('')}`;});
   if(!body)body=`<p class="muted">Tiada isyarat teknikal baharu yang bermula hari ini.</p>`;
@@ -1204,9 +1272,10 @@ function openSummary(){
     <p class="muted" style="margin:0 0 6px">Coin dengan isyarat teknikal baharu untuk mula ${S.market?fmtD(entryDate(S.market.meta.asof)):''} (dari harga tutup ${S.market?fmtD(S.market.meta.asof):''}), disusun dari yang terkuat. Tekan nama untuk lihat butiran.</p>
     <p class="muted" style="margin:0;font-size:12px">⏳ tempoh biasa sudah berlalu · % = kebarangkalian sejarah</p></div>
     ${body}
-    <p class="disc" style="margin-top:12px">Ini bacaan indicator, bukan cadangan beli atau jual.</p></div>`;
+    <button class="btn sm sec" style="margin-top:12px;width:100%" data-rs="1">🧪 Keputusan backtest penapis</button>
+    <p class="disc" style="margin-top:12px">BTC = keadaan Bitcoin · 4J = trend carta 4 jam · RS = lebih kuat daripada BTC 30 hari. Ini bacaan indicator, bukan cadangan beli atau jual.</p></div>`;
   document.body.appendChild(d);
-  const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};d.onclick=e=>{const b=e.target.closest('[data-sc]');if(b){close();stockSheet(b.dataset.sc,nameOf(b.dataset.sc));return;}if(e.target===d)close();};$('#helpX').onclick=close;
+  const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};d.onclick=e=>{if(e.target.closest('[data-rs]')){close();openResearch();return;}const b=e.target.closest('[data-sc]');if(b){close();stockSheet(b.dataset.sc,nameOf(b.dataset.sc));return;}if(e.target===d)close();};$('#helpX').onclick=close;
 }
 function openStatusHelp(){
   const rows=[
@@ -1635,6 +1704,14 @@ const EN_PHRASE=[
 ];
 
 Object.assign(EN_EXACT,{
+'Penapis isyarat':'Signal filters','Keadaan Bitcoin':'Bitcoin condition','Trend carta 4 jam':'4-hour chart trend','Kekuatan berbanding BTC (30 hari)':'Strength vs BTC (30 days)','Fear & Greed (seluruh pasaran)':'Fear & Greed (whole market)','Funding rate (perpetual)':'Funding rate (perpetual)','Open interest':'Open interest',
+'BTC menaik':'BTC rising','BTC mendatar':'BTC sideways','BTC menurun':'BTC falling','menaik':'rising','tidak menaik':'not rising','tiada data':'no data','Sangat takut':'Extreme fear','Takut':'Fear','Tamak':'Greed','Sangat tamak':'Extreme greed',
+'🧪 Keputusan backtest penapis':'🧪 Filter backtest results','🧪 Keputusan backtest':'🧪 Backtest results','Penapis':'Filter','Menang':'Won','Purata':'Average',
+'Tanpa penapis':'No filter','BTC tidak menurun':'BTC not falling','Lebih kuat daripada BTC (30 hari)':'Stronger than BTC (30 days)','Fear & Greed bawah 75 (bukan tamak melampau)':'Fear & Greed below 75 (not extreme greed)','Fear & Greed 50 ke bawah (pasaran takut)':'Fear & Greed 50 or below (fearful market)','BTC tidak menurun + lebih kuat daripada BTC':'BTC not falling + stronger than BTC','Tempoh 2 tahun (data 4 jam ada) — tanpa penapis':'2-year period (4-hour data available) — no filter','Trend 4 jam menaik':'4-hour trend rising','Trend 4 jam menaik + BTC tidak menurun':'4-hour trend rising + BTC not falling','4 jam menaik + BTC tidak menurun + lebih kuat daripada BTC':'4-hour rising + BTC not falling + stronger than BTC',
+'Isyarat Kuat + Sederhana':'Strong + Moderate signals','Semua isyarat':'All signals','Ranking: jangkaan untung (EV) vs % menang':'Ranking: expected value (EV) vs win %','EV sejarah tinggi (separuh atas)':'High historical EV (top half)','EV sejarah rendah':'Low historical EV','% menang tinggi (separuh atas)':'High win % (top half)','% menang rendah':'Low win %',
+'Model gabungan (diuji pada data yang tidak dilihat)':'Combined model (tested on unseen data)','Latihan / ujian':'Training / test','Ketepatan ranking (AUC)':'Ranking accuracy (AUC)','Semua isyarat (tempoh ujian)':'All signals (test period)','20% teratas ikut model':'Top 20% by model','Isyarat Kuat (tempoh ujian)':'Strong signals (test period)','Kalibrasi (ramalan model vs sebenar, % isyarat untung):':'Calibration (model prediction vs actual, % of profitable signals):','AUC 0.5 = sama seperti rawak; lebih tinggi = model lebih baik menyusun isyarat.':'AUC 0.5 = same as random; higher = the model ranks signals better.',
+'Purata = pulangan purata setiap isyarat selepas kos (± julat keyakinan 95%). PF = jumlah untung ÷ jumlah rugi (lebih 1 = untung). Sampel kecil (n bawah 30) belum boleh dipercayai sepenuhnya.':'Average = mean return per signal after costs (± 95% confidence range). PF = total profit ÷ total loss (above 1 = profitable). Small samples (n below 30) are not fully reliable yet.',
+'BTC = keadaan Bitcoin · 4J = trend carta 4 jam · RS = lebih kuat daripada BTC 30 hari. Ini bacaan indicator, bukan cadangan beli atau jual.':'BTC = Bitcoin condition · 4J = 4-hour chart trend · RS = stronger than BTC over 30 days. This is an indicator reading, not a buy or sell recommendation.',
 'peluang':'chance',
 'Robot dan tetapan disimpan dalam telefon ini sahaja (tiada akaun, tiada pelayan). Guna Sandaran data di Tetapan untuk pindah ke telefon lain.':'Robot and settings are stored on this phone only (no account, no server). Use Data backup in Settings to move to another phone.',
 'Tiada amaran buat masa ini. Tetapkan 🔔 Amaran harga pada coin atau guna Robot supaya app boleh memantau untuk anda.':'No alerts right now. Set a 🔔 Price alert on a coin or use the Robot so the app can monitor for you.',
@@ -1994,6 +2071,14 @@ EN_RX.unshift(
 
 /* ===== ProCoin: terjemahan tambahan ===== */
 Object.assign(EN_EXACT,{
+'Penapis isyarat':'Signal filters','Keadaan Bitcoin':'Bitcoin condition','Trend carta 4 jam':'4-hour chart trend','Kekuatan berbanding BTC (30 hari)':'Strength vs BTC (30 days)','Fear & Greed (seluruh pasaran)':'Fear & Greed (whole market)','Funding rate (perpetual)':'Funding rate (perpetual)','Open interest':'Open interest',
+'BTC menaik':'BTC rising','BTC mendatar':'BTC sideways','BTC menurun':'BTC falling','menaik':'rising','tidak menaik':'not rising','tiada data':'no data','Sangat takut':'Extreme fear','Takut':'Fear','Tamak':'Greed','Sangat tamak':'Extreme greed',
+'🧪 Keputusan backtest penapis':'🧪 Filter backtest results','🧪 Keputusan backtest':'🧪 Backtest results','Penapis':'Filter','Menang':'Won','Purata':'Average',
+'Tanpa penapis':'No filter','BTC tidak menurun':'BTC not falling','Lebih kuat daripada BTC (30 hari)':'Stronger than BTC (30 days)','Fear & Greed bawah 75 (bukan tamak melampau)':'Fear & Greed below 75 (not extreme greed)','Fear & Greed 50 ke bawah (pasaran takut)':'Fear & Greed 50 or below (fearful market)','BTC tidak menurun + lebih kuat daripada BTC':'BTC not falling + stronger than BTC','Tempoh 2 tahun (data 4 jam ada) — tanpa penapis':'2-year period (4-hour data available) — no filter','Trend 4 jam menaik':'4-hour trend rising','Trend 4 jam menaik + BTC tidak menurun':'4-hour trend rising + BTC not falling','4 jam menaik + BTC tidak menurun + lebih kuat daripada BTC':'4-hour rising + BTC not falling + stronger than BTC',
+'Isyarat Kuat + Sederhana':'Strong + Moderate signals','Semua isyarat':'All signals','Ranking: jangkaan untung (EV) vs % menang':'Ranking: expected value (EV) vs win %','EV sejarah tinggi (separuh atas)':'High historical EV (top half)','EV sejarah rendah':'Low historical EV','% menang tinggi (separuh atas)':'High win % (top half)','% menang rendah':'Low win %',
+'Model gabungan (diuji pada data yang tidak dilihat)':'Combined model (tested on unseen data)','Latihan / ujian':'Training / test','Ketepatan ranking (AUC)':'Ranking accuracy (AUC)','Semua isyarat (tempoh ujian)':'All signals (test period)','20% teratas ikut model':'Top 20% by model','Isyarat Kuat (tempoh ujian)':'Strong signals (test period)','Kalibrasi (ramalan model vs sebenar, % isyarat untung):':'Calibration (model prediction vs actual, % of profitable signals):','AUC 0.5 = sama seperti rawak; lebih tinggi = model lebih baik menyusun isyarat.':'AUC 0.5 = same as random; higher = the model ranks signals better.',
+'Purata = pulangan purata setiap isyarat selepas kos (± julat keyakinan 95%). PF = jumlah untung ÷ jumlah rugi (lebih 1 = untung). Sampel kecil (n bawah 30) belum boleh dipercayai sepenuhnya.':'Average = mean return per signal after costs (± 95% confidence range). PF = total profit ÷ total loss (above 1 = profitable). Small samples (n below 30) are not fully reliable yet.',
+'BTC = keadaan Bitcoin · 4J = trend carta 4 jam · RS = lebih kuat daripada BTC 30 hari. Ini bacaan indicator, bukan cadangan beli atau jual.':'BTC = Bitcoin condition · 4J = 4-hour chart trend · RS = stronger than BTC over 30 days. This is an indicator reading, not a buy or sell recommendation.',
 'peluang':'chance',
 'Robot dan tetapan disimpan dalam telefon ini sahaja (tiada akaun, tiada pelayan). Guna Sandaran data di Tetapan untuk pindah ke telefon lain.':'Robot and settings are stored on this phone only (no account, no server). Use Data backup in Settings to move to another phone.',
 'Tiada amaran buat masa ini. Tetapkan 🔔 Amaran harga pada coin atau guna Robot supaya app boleh memantau untuk anda.':'No alerts right now. Set a 🔔 Price alert on a coin or use the Robot so the app can monitor for you.',
@@ -2412,6 +2497,7 @@ function analysisHTML(code,A){
   // Teknikal
   if(A&&st!=='no'){h+=`<h3>Bacaan teknikal (${A.tf==='Mingguan'?'mingguan':'harian'})</h3><div class="card" style="margin:0">${A.checks.map(c=>`<div class="hrow"><span class="hic">${c.ok===true?'✅':c.ok===false?'❌':'➖'}</span><div><b>${esc(c.title)}</b><p class="muted">${esc(c.txt)}</p></div></div>`).join('')}${A.cross?`<p style="margin:8px 0 0">${esc(A.cross)}</p>`:''}</div>`;}
   else if(m&&m.va&&st!=='no')h+=`<h3>Bacaan teknikal</h3><div class="card" style="margin:0"><div class="kv"><span>RSI 14</span><b>${m.r!=null?Math.round(m.r):'-'}</b></div><div class="kv"><span>EMA200</span><b>${m.e2==null?'-':m.e2?'Atas':'Bawah'}</b></div><div class="kv"><span>MACD</span><b>${m.m==null?'-':m.m?'Positif':'Negatif'}</b></div></div>`;
+  h+=filterCardHTML(code,true);
   h+=fundHTML(code);
   // Berita
   h+=`<h3>Berita terkini</h3>`;
