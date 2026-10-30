@@ -177,7 +177,7 @@ def main():
     for s in coins:
         c = s["code"]
         rows = px.get(c)
-        item = {"n": s["name"], "s": "ok", "k": "coin"}
+        item = {"n": s["name"], "s": "ok", "k": "coin", **({"cg": s["cg"]} if s.get("cg") else {})}
         bt = None
         if rows:
             closes = [float(r[4]) for r in rows]

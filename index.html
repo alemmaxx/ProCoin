@@ -511,10 +511,27 @@ let LIVE=null;
 function livePx(code){const L=LIVE;if(!L||!L.p||!S.market)return null;if(!(L.d>S.market.meta.asof))return null;const x=L.p[code];return x?{p:x[0],ch:x[1],hi:x[2],lo:x[3],t:L.t}:null;}
 function nowPx(code){const l=livePx(code);if(l)return l.p;const m=mk(code);return m?m.c:null;}
 function mktOpen(){return true;} /* crypto berdagang 24/7 */
+/* Harga masa nyata: terus dari CoinGecko (API awam, dalam telefon pengguna). Sandaran: live.json robot GitHub (lewat ±15 minit). */
+const CG_FALLBACK={BTC:'bitcoin',ETH:'ethereum',XRP:'ripple',BNB:'binancecoin',SOL:'solana',TRX:'tron',DOGE:'dogecoin',ADA:'cardano',LINK:'chainlink',BCH:'bitcoin-cash',XLM:'stellar',AVAX:'avalanche-2',LTC:'litecoin',HBAR:'hedera-hashgraph',SUI:'sui',DOT:'polkadot',UNI:'uniswap',NEAR:'near',AAVE:'aave',ETC:'ethereum-classic',SHIB:'shiba-inu'};
+let ROBOT_LIVE=null,LIVE_SRC='';
+async function liveCG(){if(!S.market||!navigator.onLine)return null;const st=S.market.stocks;const map={};
+  Object.entries(st).forEach(([c,v])=>{const id=v.cg||CG_FALLBACK[c];if(id&&v.c)map[id]=c;});const ids=Object.keys(map);if(!ids.length)return null;
+  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),8000);
+  try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&include_last_updated_at=true&ids='+ids.join(','),{signal:ctl.signal});clearTimeout(to);if(!r.ok)return null;
+    const J=await r.json();const p={};let last=0;const R=ROBOT_LIVE&&ROBOT_LIVE.p||{};
+    Object.entries(J).forEach(([id,x])=>{const c=map[id],m=st[c];if(!c||!x||!(x.usd>0))return;const rb=R[c]||[];
+      p[c]=[x.usd,Math.round((x.usd/m.c-1)*1e4)/100,rb[2]!=null?Math.max(rb[2],x.usd):null,rb[3]!=null?Math.min(rb[3],x.usd):null];last=Math.max(last,x.last_updated_at||0);});
+    if(Object.keys(p).length<3)return null;const d=last?new Date(last*1000):new Date();
+    return {t:isoD(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes()),d:today(),p,src:'cg'};}
+  catch(e){clearTimeout(to);return null;}}
 async function loadLive(){let j=null;
-  try{if(location.protocol.startsWith('http')&&!/localhost|127\.0\.0\.1/.test(location.hostname)){const r=await fetch('https://raw.githubusercontent.com/alemmaxx/ProCoin/main/data/live.json?t='+Math.floor(Date.now()/6e4)).catch(()=>null);if(r&&r.ok)j=await r.json();}}catch(e){}
-  if(!j){try{const r=await dfetch('live.json?t='+Math.floor(Date.now()/6e4),{cache:'no-cache'});if(r.ok)j=await r.json();}catch(e){}}
-  const old=LIVE&&LIVE.t;if(j&&j.p)LIVE=j;if(LIVE&&LIVE.t!==old&&(TAB==='coin'||TAB==='robot')&&!document.querySelector('#sheet.on'))render();}
+  if(!ROBOT_LIVE||Date.now()-(ROBOT_LIVE._at||0)>9e5){
+    try{if(location.protocol.startsWith('http')&&!/localhost|127\.0\.0\.1/.test(location.hostname)){const r=await fetch('https://raw.githubusercontent.com/alemmaxx/ProCoin/main/data/live.json?t='+Math.floor(Date.now()/6e4)).catch(()=>null);if(r&&r.ok)j=await r.json();}}catch(e){}
+    if(!j){try{const r=await dfetch('live.json?t='+Math.floor(Date.now()/6e4),{cache:'no-cache'});if(r.ok)j=await r.json();}catch(e){}}
+    if(j&&j.p){j._at=Date.now();ROBOT_LIVE=j;}}
+  const cg=await liveCG();
+  const old=LIVE&&LIVE.t;LIVE=cg||ROBOT_LIVE||LIVE;LIVE_SRC=cg?'cg':ROBOT_LIVE?'robot':'';
+  if(LIVE&&LIVE.t!==old&&!document.querySelector('#sheet.on')&&!document.getElementById('help')){if(TAB==='coin')renderWatch();else if(TAB==='robot'||TAB==='portfolio')render();}}
 const lastClose=code=>{const c=S.cache[code];const m=mk(code);
   if(m&&m.c!=null&&(!c||!c.bars.length||m.d>=c.bars[c.bars.length-1].d))return {d:m.d,c:m.c};
   return c&&c.bars.length?c.bars[c.bars.length-1]:null;};
@@ -540,6 +557,7 @@ async function syncData(manual){
     try{const r3=await dfetch('track.json?t='+Math.floor(Date.now()/36e5),{cache:'no-cache'});if(r3.ok){const t=await r3.json();if(!S.track||S.track.asof!==t.asof){S.track=t;changed=true;}}}catch(e){}
     updateTop5Track();
     try{autoRun();}catch(e){}
+    if(LIVE_SRC!=='cg')loadLive();
     S.sync.at=new Date().toISOString();S.sync.err='';
   }catch(e){S.sync.err=e.message;if(manual)toast('Gagal segerak: '+e.message);}
   save();
@@ -902,8 +920,8 @@ const HOW=[
   'Sekali sehari, sekitar 8.30 pagi waktu Malaysia. Crypto berdagang 24 jam, jadi "harga tutup harian" ialah harga pada 8 pagi waktu Malaysia (12 tengah malam UTC). Robot ambil harga tutup semua coin, kira indicator, dan banding dengan sejarah 5 tahun setiap coin. Isyarat itu untuk hari ini. Jika data lewat, robot cuba semula pukul 11.30 pagi. Isyarat guna harga tutup harian, jadi ia tidak berubah sepanjang hari.',
   'When are signals generated?','Once a day, around 8.30am Malaysia time. Crypto trades 24 hours, so the "daily close" is the price at 8am Malaysia time (midnight UTC). The robot takes every coin\'s closing price, computes the indicators and compares them with each coin\'s 5-year history. Signals are for the current day. If data is late, the robot retries at 11.30am. Signals use daily closing prices, so they do not change during the day.'],
  ['🟢','Harga terkini',
-  'Setiap 30 minit, 24 jam sehari, app kemas kini harga terkini semua coin (lewat ±15 minit). Harga ini untuk paparan. Isyarat, sasaran, cut loss dan Robot tetap guna harga tutup harian.',
-  'Latest price','Every 30 minutes, 24 hours a day, the app updates the latest price of every coin (~15 minutes delayed). This price is for display. Signals, targets, cut loss and the Robot still use daily closing prices.'],
+  'Bila app dibuka, harga semua coin dikemas kini setiap 1 minit secara masa nyata (CoinGecko). Jika tidak dapat, app guna harga robot GitHub (setiap 30 minit, lewat ±15 minit). Harga ini untuk paparan. Isyarat, sasaran, cut loss dan Robot tetap guna harga tutup harian.',
+  'Latest price','While the app is open, every coin\'s price updates every minute in real time (CoinGecko). If that is unavailable, the app uses the GitHub robot price (every 30 minutes, ~15 minutes delayed). This price is for display. Signals, targets, cut loss and the Robot still use daily closing prices.'],
  ['📰','Berita crypto',
   'Robot berita berjalan setiap 2 jam dan menyemak berita terkini setiap coin (Google News). Setiap tajuk diberi tanda nada: ▲ positif, ▼ negatif, • neutral, berdasarkan kata kunci ringkas. Berita Berpotensi = coin yang ada berita bernada positif hari ini.',
   'Crypto news','The news robot runs every 2 hours and checks the latest news for every coin (Google News). Each headline gets a tone mark: ▲ positive, ▼ negative, • neutral, based on simple keywords. Potential news = coins with positive-toned news today.'],
@@ -2440,7 +2458,7 @@ function heroChart(code){
 }
 function liveLine(code){const l=livePx(code);if(!l)return '';const t=l.t.slice(11,16);
   const en=S.settings.lang==='en';
-  return `<p class="livep notr"><span class="ldot"></span>${en?'Latest price':'Harga terkini'} <b class="${l.ch>=0?'up':'dn'}">${px(l.p)} (${l.ch>0?'+':''}${l.ch.toFixed(2)}%)</b><span class="muted">· ${l.t.slice(0,10)===today()?(en?'today':'hari ini'):fmtD(l.t.slice(0,10))} ${t}</span></p>`;}
+  return `<p class="livep notr"><span class="ldot"></span>${en?'Latest price':'Harga terkini'} <b class="${l.ch>=0?'up':'dn'}">${px(l.p)} (${l.ch>0?'+':''}${l.ch.toFixed(2)}%)</b><span class="muted">· ${l.t.slice(0,10)===today()?(en?'today':'hari ini'):fmtD(l.t.slice(0,10))} ${t}${LIVE_SRC==='cg'?(en?' · live':' · masa nyata'):(en?' · ~15 min delay':' · lewat ±15 minit')}</span></p>`;}
 function heroHTML(){
   const L=latestList();
   if(!L&&!S.market)return `<section class="hero" style="--hc:#0f5a45"><span class="tag">✦ <b>${S.sync.err?'Tiada sambungan':'Menyediakan data'}</b></span>
@@ -3008,7 +3026,7 @@ if(location.hash==='#robot'){try{history.replaceState(history.state,'',location.
 updateLangBtn();startI18N();updateInstallBtn();
 if(S.alerts&&S.alerts.notify)regPeriodic();
 if(FB_CONFIG)fbInit().catch(()=>{FBREADY=true;if(TAB==='robot')render();});
-checkStatus();setInterval(checkStatus,12e4);loadLive();setInterval(()=>{if(mktOpen())loadLive();},3e5);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkStatus();});
+checkStatus();setInterval(checkStatus,12e4);loadLive();setInterval(()=>{if(!document.hidden)loadLive();},6e4);document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkStatus();loadLive();}});
 syncData(false);
 if(!S.onb)setTimeout(()=>openOnboard(0),600);else if(S.onb<2)setTimeout(()=>openOnboard(2),600);   // pengguna lama: tunjuk slaid ciri baharu sahaja
 </script>
