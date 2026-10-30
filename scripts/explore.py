@@ -303,7 +303,7 @@ def main():
                                "days": xo - ei})
         done = [t for t in trades if not t["open"]]
         row = {"key": key, "name": name, "trades_total": len(trades),
-               "tl": [[t["c"], t["in"], t["out"], round(t["g"], 2), t["open"]] for t in sorted(trades, key=lambda t: t["in"]) if t["in"] >= P["24m"]]}
+               "tl": []}
         for cost in COSTS:
             ck = f"c{cost}"
             rows = {}
@@ -327,6 +327,8 @@ def main():
             t24 = rows["24m"]
             rows["passed"] = bool(rows["eligible"] and t24["n"] >= 15 and (t24.get("avg") or 0) > 0 and (t24.get("pf") or 0) >= 1.1)
             row[ck] = rows
+        if row.get("c1.2", {}).get("passed"):
+            row["tl"] = [[t["c"], t["in"], t["out"], round(t["g"], 2), t["open"]] for t in sorted(trades, key=lambda t: t["in"]) if t["in"] >= P["24m"]]
         res.append(row)
         c1 = row["c1.2"]
         print(f"  {key:10s} n={len(done):4d} | kos 1.2: reka {c1['design'].get('avg')}% pf {c1['design'].get('pf')} "

@@ -30,8 +30,9 @@ MIN_VALUE = 1_000_000   # nilai dagangan purata 20 hari minimum (USD)
 # Strategi yang digunakan untuk isyarat (dibuktikan dalam robot kajian, data/research.json):
 #   A = Isyarat aktif (Isyarat Kuat), B = Isyarat Pemerhatian
 # Dipilih oleh kajian penerokaan (scripts/explore.py) dengan kos sebenar runcit 1.2% pergi-balik
-USE = {"drop15": "A", "ema2050": "B"}
-RULE = {"drop15": "Masuk bila coin jatuh lebih 15% dalam 3 hari tetapi masih atas EMA200. Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3× ATR.",
+USE = {"drop2d": "A", "ema2050": "B"}
+RULE = {"drop2d": "Masuk bila coin jatuh lebih 15% dalam 2 hari (jualan panik). Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3× ATR.",
+        "drop15": "Masuk bila coin jatuh lebih 15% dalam 3 hari tetapi masih atas EMA200. Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3× ATR.",
         "ema2050": "Masuk bila EMA20 lintas atas EMA50 (harga atas EMA200). Pegang selagi trend kekal; keluar bila EMA20 jatuh bawah EMA50."}
 
 
@@ -268,7 +269,7 @@ def main():
                     en = closes[-1] if ago == 0 else (o_[t + 1] or closes[t])
                     stop = en - S["k"] * at if S.get("k") else 0.0   # ema2050: tiada stop ATR, keluar ikut trend
                     st = PS[k]
-                    if k == "drop15":
+                    if k in ("drop15", "drop2d"):
                         tg = max(e10[L] or en * 1.01, en * 1.005)
                     else:
                         tg = en * (1 + (st.get("aw") or 5) / 100)

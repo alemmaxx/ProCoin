@@ -90,6 +90,10 @@ STRATS = {
     "drop15": {"name": "Jatuh mendadak dalam trend naik (lantunan)", "k": 3.0, "trail": False, "max": 20,
                "entry": lambda t, c, h, l, e5, e20, e50, e200, r2: t >= 3 and e200[t] is not None and c[t] > e200[t] and c[t] / c[t - 3] - 1 < -0.15,
                "exit": lambda j, c, e5, e10, e20, e50: e10[j] is not None and c[j] > e10[j]},
+    # versi lebih kerap (kajian penerokaan 75 varian): jatuh >15% dalam 2 hari, tanpa penapis trend
+    "drop2d": {"name": "Jatuh mendadak (lantunan selepas jualan panik)", "k": 3.0, "trail": False, "max": 20,
+               "entry": lambda t, c, h, l, e5, e20, e50, e200, r2: t >= 2 and c[t] / c[t - 2] - 1 < -0.15,
+               "exit": lambda j, c, e5, e10, e20, e50: e10[j] is not None and c[j] > e10[j]},
     "ema2050": {"name": "Trend: EMA20 lintas atas EMA50 (atas EMA200)", "k": None, "max": 365,
                 "entry": lambda t, c, h, l, e5, e20, e50, e200, r2: None not in (e20[t], e50[t], e20[t - 1], e50[t - 1], e200[t])
                 and e20[t - 1] <= e50[t - 1] and e20[t] > e50[t] and c[t] > e200[t],
