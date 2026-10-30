@@ -1,0 +1,103 @@
+name: Kemas kini data ProCoin
+
+on:
+  schedule:
+    # Setiap hari 8.20 pagi waktu Malaysia (bar harian crypto UTC tutup pada 8 pagi MYT)
+    - cron: "20 0 * * *"
+    # Sandaran 11.20 pagi waktu Malaysia — jika Yahoo lewat
+    - cron: "20 3 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["index.html", "privacy.html", "manifest.webmanifest", "sw.js", "icons/**", "data/coins.json"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: procoin-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ambil data terkini (elak konflik dengan larian lepas)
+        run: git pull -q --ff-only origin main || true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Pasang keperluan
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Tarik harga & kira indicator
+        run: python scripts/market.py --out _site/data
+
+      - name: Tarik harga 30 minit (carta 30m / 1 jam)
+        continue-on-error: true
+        run: python scripts/intraday.py --out _site/data
+
+      - name: Maklumat coin (nilai pasaran, bekalan, ATH)
+        continue-on-error: true
+        run: python scripts/coininfo.py --out _site/data
+
+      - name: Tarik berita crypto (Google News)
+        continue-on-error: true
+        run: python scripts/news.py --out _site/data
+
+      - name: Commit rekod prestasi isyarat
+        run: |
+          git config user.name "procoin-bot"
+          git config user.email "actions@users.noreply.github.com"
+          python3 -c "import json;m=json.load(open('_site/data/market.json'))['meta'];json.dump(m,open('data/market-meta.json','w'),indent=1)" || true
+          git add data/signals.json data/paper-live.json data/paper-summary.json data/paper-experiments.json data/exit-experiments.json data/market-meta.json data/news.json data/fund.json data/klci.json data/regime-experiment.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Data: rekod prestasi isyarat"
+            git pull --rebase -X theirs -q || true
+            git push
+          fi
+
+      - name: Sediakan laman
+        run: |
+          cp index.html privacy.html manifest.webmanifest sw.js _site/
+          cp data/paper-experiments.json data/exit-experiments.json data/status.json data/live.json _site/data/ 2>/dev/null || true
+          cp -r icons _site/icons
+          touch _site/.nojekyll
+
+      - name: Ujian app sebelum dinaikkan (gagal = versi lama dikekalkan & anda dapat emel)
+        id: smoke
+        continue-on-error: true
+        run: python scripts/smoke.py --site _site
+
+      - uses: actions/configure-pages@v5
+        if: steps.smoke.outcome == 'success'
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.smoke.outcome == 'success'
+        with:
+          path: _site
+      - id: deploy
+        if: steps.smoke.outcome == 'success'
+        uses: actions/deploy-pages@v4
+
+      - name: Gagalkan job jika data harga lewat (supaya anda dapat emel)
+        if: github.event_name == 'schedule'
+        run: python scripts/check_fresh.py
+
+      - name: Gagalkan job jika ujian app gagal (supaya anda dapat emel)
+        if: steps.smoke.outcome == 'failure'
+        run: |
+          echo "::error::Ujian app gagal. Versi baharu tidak dinaikkan; app di telefon pengguna kekal versi lama."
+          exit 1

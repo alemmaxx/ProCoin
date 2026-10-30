@@ -1,0 +1,41 @@
+name: Berita terkini (setiap 2 jam)
+
+on:
+  schedule:
+    - cron: "5 */2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: procoin-news
+  cancel-in-progress: false
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pasang keperluan
+        run: pip install requests
+      - name: Ambil data pasaran terkini dari app
+        run: |
+          mkdir -p tmp/data
+          curl -sSfL "https://alemmaxx.github.io/ProCoin/data/market.json" -o tmp/data/market.json
+      - name: Tarik berita
+        run: python scripts/news.py --out tmp/data
+      - name: Simpan berita
+        run: |
+          git config user.name "procoin-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/news.json
+          if ! git diff --cached --quiet; then
+            git commit -qm "Data: berita terkini"
+            git pull --rebase -X theirs -q || true
+            git push -q
+          fi

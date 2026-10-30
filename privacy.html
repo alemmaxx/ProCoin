@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ProCoin · Privasi & Terma</title>
+<style>
+:root{--bg:#0b1411;--card:#13201b;--ink:#e8efe9;--mut:#9fb0a7;--line:#22332c;--gold:#e0b94f}
+@media (prefers-color-scheme: light){:root{--bg:#f6f4ee;--card:#fff;--ink:#16211c;--mut:#5b6a62;--line:#e3ded2;--gold:#a8821f}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:4px 0 2px}h2{font-size:17px;margin:22px 0 6px;color:var(--gold)}
+.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+.tabs{display:flex;gap:6px;margin:12px 0 4px}.tabs button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px inherit;cursor:pointer}
+.tabs button.on{background:var(--gold);color:#1b1503;border-color:var(--gold)}
+section{display:none}section.on{display:block}
+ul{padding-left:20px;margin:6px 0}li{margin:3px 0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+a{color:var(--gold)}
+</style>
+</head>
+<body>
+<main>
+<h1>ProCoin · Privasi & Terma</h1>
+<p class="sub">Kemas kini / Updated: 30 Oktober 2026 · ProCoin oleh KUKUSAN LEGACY</p>
+<div class="tabs"><button id="tbm" class="on">BM</button><button id="ten">EN</button></div>
+
+<section id="bm" class="on">
+<h2>1. Apa ProCoin</h2>
+<p>ProCoin ialah app <b>indicator</b> untuk coin crypto besar. Ia memaparkan harga, carta, bacaan teknikal dan tajuk berita. Ia <b>bukan</b> nasihat pelaburan dan <b>bukan</b> cadangan beli atau jual. ProCoin tidak menilai status syariah coin.</p>
+
+<h2>2. Data yang kami simpan</h2>
+<div class="box">ProCoin <b>tiada akaun dan tiada pelayan pengguna</b>. Watchlist, Robot (Manual & Auto), Portfolio, amaran dan tetapan disimpan dalam telefon anda sahaja. Kami tidak menerima apa-apa data peribadi.</div>
+<p>Kami <b>tidak</b> meminta kata laluan, nombor kad atau akaun bank, dan <b>tidak</b> memasang iklan atau penjejak pihak ketiga.</p>
+
+<h2>3. Di mana app dihoskan</h2>
+<p>App dan data pasaran awam (harga, isyarat, berita) dihoskan di GitHub Pages. Pautan berita membawa anda ke laman sumber asal.</p>
+
+<h2>4. Padam data anda</h2>
+<p>Padam data laman dalam pelayar, atau nyahpasang app. Anda boleh simpan salinan dahulu melalui <b>Tetapan → Sandaran data</b>.</p>
+
+<h2>5. Terma guna</h2>
+<ul>
+<li>Data harga daripada pihak ketiga dan bersifat <b>indikatif</b>; mungkin lewat atau berbeza daripada harga sebenar di bursa crypto.</li>
+<li>Isyarat dan Robot ialah <b>ujian maya</b> berdasarkan sejarah harga. Keputusan lepas tidak menjamin keputusan akan datang.</li>
+<li>Crypto sangat turun naik dan anda boleh hilang semua modal. Semua keputusan pelaburan adalah tanggungjawab anda sendiri.</li>
+<li>Gunakan bursa crypto yang berdaftar dengan Suruhanjaya Sekuriti Malaysia.</li>
+<li>Kami boleh mengubah app atau terma ini; tarikh di atas akan dikemas kini.</li>
+</ul>
+</section>
+
+<section id="en">
+<h2>1. What ProCoin is</h2>
+<p>ProCoin is an <b>indicator</b> app for large crypto coins. It shows prices, charts, technical readings and news headlines. It is <b>not</b> investment advice and <b>not</b> a buy or sell recommendation. ProCoin does not assess the Shariah status of coins.</p>
+
+<h2>2. Data we store</h2>
+<div class="box">ProCoin has <b>no accounts and no user servers</b>. Watchlist, Robot (Manual & Auto), Portfolio, alerts and settings stay on your phone only. We receive no personal data.</div>
+<p>We do <b>not</b> ask for passwords, card or bank account numbers, and do <b>not</b> use ads or third-party trackers.</p>
+
+<h2>3. Where the app is hosted</h2>
+<p>The app and public market data (prices, signals, news) are hosted on GitHub Pages. News links take you to the original source site.</p>
+
+<h2>4. Delete your data</h2>
+<p>Clear the site data in your browser, or uninstall the app. You can keep a copy first via <b>Settings → Data backup</b>.</p>
+
+<h2>5. Terms of use</h2>
+<ul>
+<li>Price data comes from third parties and is <b>indicative</b>; it may be delayed or differ from actual prices on crypto exchanges.</li>
+<li>Signals and Robot are <b>virtual tests</b> based on price history. Past results do not guarantee future results.</li>
+<li>Crypto is very volatile and you can lose all your capital. All investment decisions are your own responsibility.</li>
+<li>Use crypto exchanges registered with the Securities Commission Malaysia.</li>
+<li>We may change the app or these terms; the date above will be updated.</li>
+</ul>
+</section>
+<p class="sub" style="margin-top:28px"><a href="./">← Kembali ke ProCoin / Back to ProCoin</a></p>
+</main>
+<script>
+const set=l=>{['bm','en'].forEach(x=>{document.getElementById(x).classList.toggle('on',x===l);document.getElementById('t'+x).classList.toggle('on',x===l);});document.documentElement.lang=l==='en'?'en':'ms';};
+document.getElementById('tbm').onclick=()=>set('bm');document.getElementById('ten').onclick=()=>set('en');
+try{const s=JSON.parse(localStorage.getItem('procoin_v1')||'{}');if(s.settings&&s.settings.lang==='en')set('en');}catch(e){}
+if(location.hash==='#en')set('en');
+</script>
+</body>
+</html>
