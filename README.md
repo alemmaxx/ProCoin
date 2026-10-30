@@ -23,11 +23,19 @@ Untuk coin yang ticker Yahoo-nya pelik (cth. SUI = `SUI20947-USD`, UNI = `UNI708
 
 Yahoo kadang-kadang lewat menerbitkan bar harian crypto terkini; robot mengisi bar harian yang tertinggal (hari UTC yang sudah lengkap) daripada data sejam.
 
-## Kebarangkalian & paras harga
+## Isyarat & backtest
 
-Robot menjalankan **backtest** atas sejarah ~5 tahun setiap coin untuk 4 persediaan beli (koreksi dalam trend menaik, golden cross, momentum MACD, lantunan lebih jualan).
-Setiap isyarat dalam sejarah diuji: harga sampai **paras atas (2× ATR)** atau **paras bawah (1.25× ATR)** dahulu, atau tiada dalam **30 hari**. Kos 0.2% diambil kira.
-Tetapan di `scripts/backtest.py` (H, TGT_ATR, STP_ATR, FEE). Ini statistik sejarah, bukan jaminan.
+Isyarat hanya datang daripada strategi yang **lulus backtest** robot kajian (`scripts/research.py`, setiap Ahad, keputusan dalam `data/research.json` dan helaian 🧪 Keputusan backtest dalam app):
+
+| Strategi | Gred | Peraturan |
+|---|---|---|
+| RSI(2) bawah 10 dalam trend menaik | **Isyarat aktif** | Beli harga buka esok; keluar bila harga tutup atas EMA5 atau selepas 10 hari; cut loss 2.5× ATR |
+| Breakout 20 hari | **Pemerhatian** | Trailing stop 3× ATR di bawah harga tertinggi sejak beli |
+
+Strategi ditakrifkan dalam `scripts/strategies.py`; pilihan strategi & gred dalam `USE` di `scripts/market.py`.
+% untung dan purata pulangan ialah statistik gabungan semua coin (5 tahun, selepas kos 0.2%), bukan satu coin, supaya tidak terlebih yakin.
+Penapis tambahan (BTC, carta 4 jam, kekuatan vs BTC, Fear & Greed) diuji tetapi belum terbukti, jadi dipaparkan sebagai maklumat sahaja.
+Ini statistik sejarah, bukan jaminan.
 
 ## Pemasangan (sekali sahaja)
 
