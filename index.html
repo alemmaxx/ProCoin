@@ -1103,8 +1103,8 @@ function capState(){const a=AUTO();if(!(a.cap>0))return null;let real=0,lock=0,u
   const free=a.cap+real-lock,eq=a.cap+real,per=Math.round(eq/5*100)/100;let slots=Math.max(0,Math.floor(free/per+1e-9));if(free-slots*per>=per*.5)slots++;return {cap:a.cap,real,lock,unreal,free,eq,per,slots,n};}   // modal dibahagi 5 (≈20% setiap posisi)
 function hzOf(p){return p&&p.hz?p.hz:BTH().h;}   // had hari posisi (Robot Auto: tamat tempoh isyarat)
 function autoCardHTML(){const a=AUTO();const ty=[a.sig&&'🟢',a.news&&'📰'].filter(Boolean).join(' ');
-  return `<button class="card autob" id="auBtn"><span class="autob-ic">🤖</span><span class="autob-t"><b>Robot Auto</b><small>${a.on?(capState()?`Hidup · ${ty||'tiada jenis dipilih'} · modal ${rm(capState().eq)} · untung ${a.tp}% · baki ${rm(capState().free)}`:`Hidup · ${ty||'tiada jenis dipilih'} · $${a.stake} · untung ${a.tp}%`):'Mati · tekan untuk hidupkan'}</small></span><span class="badge ${a.on?'b-ok':''}">${a.on?'ON':'OFF'}</span><span class="muted" style="font-size:20px">›</span></button>`;}
-function openAuto(){const a=AUTO();const C=capState();
+  return `<button class="card autob" id="auBtn"><span class="autob-ic">🤖</span><span class="autob-t"><b>Robot Auto</b><small>${a.on?(capState()?`Hidup · ${ty||'tiada jenis dipilih'} · modal ${rm(capState().eq)} · untung ${a.tp}% · baki ${rm(capState().free)}`:`Hidup · ${ty||'tiada jenis dipilih'} · $${a.stake} · untung ${a.tp}%`):'Mati · tekan untuk hidupkan'}<br>💸 ${esc(costLabel())} · ${(costRT()*100).toFixed(2)}% pergi-balik</small></span><span class="badge ${a.on?'b-ok':''}">${a.on?'ON':'OFF'}</span><span class="muted" style="font-size:20px">›</span></button>`;}
+function openAuto(keep){const a=AUTO();const C=capState();const D=keep&&openAuto._d?openAuto._d:(openAuto._d={...COST()});
   openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">🤖 Robot Auto</h2><label class="sw"><input type="checkbox" id="auOn" ${a.on?'checked':''}><span></span></label></div>
     <p class="muted" style="margin:6px 0 8px;font-size:13px">Bila hidup, robot masuk ujian sendiri setiap pagi (selepas data harian) untuk jenis yang anda pilih, guna harga tutup terakhir. Coin ini ditanda A dalam senarai.</p>
     <div class="auopt${a.on?'':' off'}"><label class="toggle"><span>🟢 Isyarat Kuat (Ringkasan isyarat aktif)</span><input type="checkbox" id="auSig" ${a.sig?'checked':''}></label>
@@ -1118,9 +1118,11 @@ function openAuto(){const a=AUTO();const C=capState();
         `<p class="muted" style="font-size:12.5px;margin:6px 0 0">Tetapkan modal supaya robot hanya labur dalam had ini. Bila modal tak cukup, isyarat baru dilangkau sehingga posisi lain ditutup.</p>`}
       <div class="grid2" style="align-items:end;margin-top:8px"><div><label>${C?'Tukar modal (USD)':'Modal (USD)'}</label><input id="auCap" inputmode="decimal" value="${C?a.cap:''}" placeholder="cth. 1000"></div><div><button class="btn sm gold" style="width:100%;min-height:44px" id="auCapSet">${C?'Kemas kini':'Tetapkan modal'}</button></div></div>
       ${C?`<div class="grid2" style="align-items:end;margin-top:8px"><div><label>Tambah modal (USD)</label><input id="auCapAdd" inputmode="decimal" placeholder="cth. 500"></div><div><button class="btn sm sec" style="width:100%;min-height:44px" id="auCapAddB">+ Tambah</button></div></div>
-        <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm sec" id="auCapReset">↺ Mula semula kiraan</button><button class="btn sm sec" id="auCapOff">Buang had modal</button></div>`:''}</div></div>
-    <button class="btn" style="width:100%;margin-top:14px" id="auDone">Siap</button>`);
-  const upd=()=>{save();if(TAB==='robot')rRobot();openAuto();};
+        <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm sec" id="auCapReset">↺ Mula semula kiraan</button><button class="btn sm sec" id="auCapOff">Buang had modal</button></div>`:''}</div>
+    ${costSecHTML(D)}</div>
+    <button class="btn" style="width:100%;margin-top:14px" id="auDone">Simpan & siap</button>`);
+  bindCostSec(D);
+  const upd=()=>{save();if(TAB==='robot')rRobot();openAuto(1);};
   $('#auOn').onchange=e=>{a.on=e.target.checked;const n=a.on?autoRun():0;upd();toast(a.on?(n?`🤖 Robot Auto dihidupkan · masuk ${n} coin`:'🤖 Robot Auto dihidupkan'):'Robot Auto dimatikan');};
   $('#auSig').onchange=e=>{a.sig=e.target.checked;upd();};$('#auNews').onchange=e=>{a.news=e.target.checked;upd();};
   const stI=$('#auStake');if(stI)stI.onchange=e=>{a.stake=Math.max(1,num(e.target.value)||20);upd();toast('✓ Nilai maya $'+a.stake+' disimpan');};
@@ -1129,7 +1131,7 @@ function openAuto(){const a=AUTO();const C=capState();
   const ca=$('#auCapAddB');if(ca)ca.onclick=()=>{const v=num($('#auCapAdd').value);if(!(v>0)){toast('Isi jumlah tambahan');return;}a.cap=Math.round((a.cap+v)*100)/100;upd();toast('✓ Modal ditambah '+rm(v));};
   const cr=$('#auCapReset');if(cr)cr.onclick=()=>confirm2(cr,'Tekan lagi: mula semula',()=>{a.capAt=Date.now();upd();toast('Kiraan modal bermula semula');});
   const co=$('#auCapOff');if(co)co.onclick=()=>confirm2(co,'Tekan lagi: buang had',()=>{a.cap=0;upd();toast('Had modal dibuang');});
-  $('#auDone').onclick=()=>{const v=$('#auStake'),t=$('#auTp');let ch=false;if(v&&num(v.value)&&num(v.value)!==a.stake){a.stake=Math.max(1,num(v.value));ch=true;}if(t&&num(t.value)&&num(t.value)!==a.tp){a.tp=Math.min(50,Math.max(1,num(t.value)));ch=true;}if(ch){save();if(TAB==='robot')rRobot();}closeSheet();};}
+  $('#auDone').onclick=()=>{const v=$('#auStake'),t=$('#auTp');let ch=false;if(v&&num(v.value)&&num(v.value)!==a.stake){a.stake=Math.max(1,num(v.value));ch=true;}if(t&&num(t.value)&&num(t.value)!==a.tp){a.tp=Math.min(50,Math.max(1,num(t.value)));ch=true;}saveCost(D);if(ch){save();if(TAB==='robot')rRobot();}closeSheet();toast('✓ Tetapan Robot Auto disimpan');};}
 /* Robot Auto (dalam telefon): masuk posisi maya untuk Isyarat Kuat (isyarat aktif) / Berita Berpotensi (kukuh).
    Modal dibahagi 5, sasaran = % ambil untung, cut loss ikut isyarat/ATR. */
 function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual||[];
@@ -1148,7 +1150,7 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
     add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});
   if(add.length){S.manual.push(...add);S.autoIn={at:now,n:add.length,names:add.map(p=>shortName(p.name)),id:add[0].id};save();Promise.allSettled(add.map(p=>getBars(p.code))).then(()=>{manRefresh();if(TAB==='robot')rRobot();});}
   return add.length;}
-function bindAuto(){const b=$('#auBtn');if(b)b.onclick=openAuto;}
+function bindAuto(){const b=$('#auBtn');if(b)b.onclick=()=>openAuto();}
 function manDelete(id){S.manual=(S.manual||[]).filter(x=>x.id!==id);S.manDel=[...new Set([...(S.manDel||[]),id])].slice(-300);save();}
 function manOpen(code){return (S.manual||[]).find(p=>p.code===code&&!p.closed);}
 function manLevels(code,en){
@@ -1181,23 +1183,28 @@ const PLATFORM_FEES={
   custom:{n:'Kos sendiri',taker:0.40,instant:1.0,note:'Masukkan yuran setiap transaksi (beli ATAU jual) ikut skrin yuran platform anda.'}};
 function COST(){const d={pf:'hata',mode:'taker',slip:0.10,custom:0.40};const x=S.settings.cost||(S.settings.cost={});for(const k in d)if(!(k in x))x[k]=d[k];return x;}
 /* yuran satu transaksi (beli ATAU jual), pecahan */
-function costSide(){const c=COST(),P=PLATFORM_FEES[c.pf]||PLATFORM_FEES.hata;const fee=c.pf==='custom'?num(c.custom):(c.mode==='instant'?P.instant:P.taker);return Math.max(0,(fee+num(c.slip))/100);}
-function costRT(){return costSide()*2;}
-function costLabel(){const c=COST(),P=PLATFORM_FEES[c.pf]||PLATFORM_FEES.hata;return c.pf==='custom'?`Kos sendiri ${num(c.custom)}%`:`${P.n} ${c.mode==='instant'?'Instant Buy':'Exchange (order pasaran)'}`;}
+function costSide(c){c=c||COST();const P=PLATFORM_FEES[c.pf]||PLATFORM_FEES.hata;const fee=c.pf==='custom'?num(c.custom):(c.mode==='instant'?P.instant:P.taker);return Math.max(0,(fee+num(c.slip))/100);}
+function costRT(c){return costSide(c)*2;}
+function costLabel(c){c=c||COST();const P=PLATFORM_FEES[c.pf]||PLATFORM_FEES.hata;return c.pf==='custom'?`Kos sendiri ${num(c.custom)}%`:`${P.n} ${c.mode==='instant'?'Instant Buy':'Exchange (order pasaran)'}`;}
 /* jangkaan purata strategi selepas kos platform pengguna (backtest guna kos 0.2% pergi-balik) */
-function netEV(ev){return ev==null?null:Math.round((ev+BTH().fee*100-costRT()*100)*100)/100;}
+function netEV(ev,c){return ev==null?null:Math.round((ev+BTH().fee*100-costRT(c)*100)*100)/100;}
 function manPnl(p,exit){const f=p.fs!=null?p.fs:BTH().fee/2;const units=p.stake*(1-f)/p.en;return units*exit*(1-f)-p.stake;}
-function costCardHTML(){const c=COST(),rt=costRT()*100,sg=stratOf('rsi2'),ne=sg?netEV(sg.ev):null;
-  return `<div class="card"><h2>💸 Kos dagangan sebenar</h2>
-   <p class="muted" style="margin-top:0;font-size:13px">Robot kira untung/rugi seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.</p>
-   <div class="grid2"><div><label>Platform</label><select id="ckPf">${Object.entries(PLATFORM_FEES).map(([k,v])=>`<option value="${k}"${c.pf===k?' selected':''}>${v.n}</option>`).join('')}</select></div>
-   ${c.pf==='custom'?`<div><label>Yuran setiap transaksi (%)</label><input id="ckCu" inputmode="decimal" value="${c.custom}"></div>`:`<div><label>Jenis order</label><select id="ckMd"><option value="taker"${c.mode==='taker'?' selected':''}>Exchange</option><option value="instant"${c.mode==='instant'?' selected':''}>Instant Buy/Sell</option></select></div>`}</div>
-   <div class="grid2" style="margin-top:8px"><div><label>Spread / slippage (%)</label><input id="ckSl" inputmode="decimal" value="${c.slip}"></div><div><label>Jumlah kos pergi-balik</label><div class="ckrt">${rt.toFixed(2)}%</div></div></div>
-   <p class="muted" style="font-size:12px;margin:8px 0 0">${esc((PLATFORM_FEES[c.pf]||{}).note||'')}</p>
-   ${ne!=null?`<div class="alert ${ne>0?'a-green':'a-red'}" style="margin:10px 0 0">Strategi Isyarat aktif (RSI 2): purata ${sg.ev>0?'+':''}${sg.ev}% dalam backtest (kos 0.2%). Dengan kos anda ${rt.toFixed(2)}%, jangkaan purata <b>${ne>0?'+':''}${ne}%</b> setiap dagangan.${ne>0?'':' Robot Auto tidak akan masuk kerana kos melebihi kelebihan strategi. Kurangkan kos (contohnya order had / maker) atau pilih platform lebih murah.'}</div>`:''}</div>`;}
-function bindCost(){const c=COST();const up=()=>{save();rRobot();};
-  const a=$('#ckPf');if(a)a.onchange=e=>{c.pf=e.target.value;up();};const b=$('#ckMd');if(b)b.onchange=e=>{c.mode=e.target.value;up();};
-  const s=$('#ckSl');if(s)s.onchange=e=>{c.slip=Math.max(0,Math.min(5,num(e.target.value)));up();};const u=$('#ckCu');if(u)u.onchange=e=>{c.custom=Math.max(0,Math.min(5,num(e.target.value)));up();};}
+function costSecHTML(D){const rt=costRT(D)*100,sg=stratOf('rsi2'),ne=sg?netEV(sg.ev,D):null,dirty=JSON.stringify(D)!==JSON.stringify(COST());
+  return `<div class="capbox" id="ckBox"><div class="row between" style="align-items:center"><b>💸 Kos dagangan sebenar</b><span class="badge ${dirty?'b-warn':'b-ok'}">${dirty?'Belum disimpan':'Disimpan'}</span></div>
+   <p class="muted" style="font-size:12.5px;margin:6px 0 8px">Untung/rugi robot dikira seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.</p>
+   <div class="grid2"><div><label>Platform</label><select id="ckPf">${Object.entries(PLATFORM_FEES).map(([k,v])=>`<option value="${k}"${D.pf===k?' selected':''}>${v.n}</option>`).join('')}</select></div>
+   ${D.pf==='custom'?`<div><label>Yuran setiap transaksi (%)</label><input id="ckCu" inputmode="decimal" value="${D.custom}"></div>`:`<div><label>Jenis order</label><select id="ckMd"><option value="taker"${D.mode==='taker'?' selected':''}>Exchange</option><option value="instant"${D.mode==='instant'?' selected':''}>Instant Buy/Sell</option></select></div>`}</div>
+   <div class="grid2" style="margin-top:8px;align-items:end"><div><label>Spread / slippage (%)</label><input id="ckSl" inputmode="decimal" value="${D.slip}"></div><div><label>Jumlah kos pergi-balik</label><div class="ckrt">${rt.toFixed(2)}%</div></div></div>
+   <p class="muted" style="font-size:12px;margin:6px 0 0">${esc((PLATFORM_FEES[D.pf]||{}).note||'')}</p>
+   ${ne!=null?`<div class="alert ${ne>0?'a-green':'a-red'}" style="margin:10px 0 0">Strategi Isyarat aktif (RSI 2): purata ${sg.ev>0?'+':''}${sg.ev}% dalam backtest (kos 0.2%). Dengan kos anda ${rt.toFixed(2)}%, jangkaan purata <b>${ne>0?'+':''}${ne}%</b> setiap dagangan.${ne>0?'':' Robot Auto tidak akan masuk kerana kos melebihi kelebihan strategi. Kurangkan kos (contohnya order had / maker) atau pilih platform lebih murah.'}</div>`:''}
+   <button class="btn sm gold" style="width:100%;min-height:44px;margin-top:10px" id="ckSave">💾 Simpan kos</button></div>`;}
+function bindCostSec(D){const re=()=>{const b=$('#ckBox');if(!b)return;b.outerHTML=costSecHTML(D);bindCostSec(D);};
+  const a=$('#ckPf');if(a)a.onchange=e=>{D.pf=e.target.value;re();};const b=$('#ckMd');if(b)b.onchange=e=>{D.mode=e.target.value;re();};
+  const s=$('#ckSl');if(s)s.onchange=e=>{D.slip=Math.max(0,Math.min(5,num(e.target.value)));re();};const u=$('#ckCu');if(u)u.onchange=e=>{D.custom=Math.max(0,Math.min(5,num(e.target.value)));re();};
+  const v=$('#ckSave');if(v)v.onclick=()=>{saveCost(D);re();toast('✓ Kos '+costLabel()+' ('+(costRT()*100).toFixed(2)+'% pergi-balik) disimpan');};}
+/* baca input terkini (jika pengguna belum keluar dari kotak) & simpan ke tetapan */
+function saveCost(D){const s=$('#ckSl'),u=$('#ckCu');if(s&&s.value!=='')D.slip=Math.max(0,Math.min(5,num(s.value)));if(u&&u.value!=='')D.custom=Math.max(0,Math.min(5,num(u.value)));
+  Object.assign(COST(),D);save();if(TAB==='robot')rRobot();}
 function manRefresh(){setTimeout(robotStateSync,0);let ch=false;(S.manual||[]).forEach(p=>{if(p.closed)return;const r=manEval(p);if(r){p.closed=r;ch=true;}});if(ch)save();}
 function openManual(code){
   code=code||'';const nm=nameOf(code);const m=mk(code);const P=manOpen(code);
@@ -1271,7 +1278,6 @@ function rManual(){
   let h=`<div class="card"><h2>🤖 Robot</h2><p class="muted" style="margin-top:0">Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.</p>
     <div class="mstat"><div><b>${op.length}</b><span>Sedang diuji</span></div><div><b class="${opn>=0?'up':'dn'}">${rmS(opn)}</b><span>Untung/rugi kini</span></div><div><b>${cl.length?Math.round(w/cl.length*100)+'%':'-'}</b><span>Ketepatan</span></div><div><b class="${pnl>=0?'up':'dn'}">${cl.length?rmS(pnl):'-'}</b><span>Untung/rugi selesai</span></div></div>${maSplitHTML(M)}${M.length?`<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">${cl.length?'<button class="btn sm sec" id="rsClosed">Kosongkan yang selesai</button>':''}<button class="btn sm sec" id="rsAll">↺ Reset semua</button></div>`:''}</div>`;
   h+=autoCardHTML();
-  h+=costCardHTML();
   if(M.length){const cs=cl.slice().sort((a,b)=>a.closed.end.localeCompare(b.closed.end));let cum=0;const first=M.map(p=>p.d).sort()[0];
     const cv=[[first,0],...cs.map(p=>[p.closed.end,cum+=manPnl(p,p.closed.exit)])];if(op.length||cv.length<2)cv.push([today(),cum+opn]);
     h+=`<div class="card"><h2>Graf untung / rugi</h2><p class="muted" style="margin-top:0;font-size:13px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1)}</div>`;}
@@ -1282,7 +1288,7 @@ function rManual(){
   return h;}
 function manReset(ids){const del=new Set(ids);S.manual=(S.manual||[]).filter(p=>!del.has(p.id));S.manDel=[...new Set([...(S.manDel||[]),...ids])].slice(-300);save();rRobot();}
 function confirm2(btn,msg,fn){if(btn.dataset.armed){fn();return;}btn.dataset.armed=1;const t=btn.textContent;btn.textContent=msg;btn.classList.add('red');setTimeout(()=>{if(btn.isConnected){delete btn.dataset.armed;btn.textContent=t;btn.classList.remove('red');}},3500);}
-function bindManual(){bindAuto();bindCost();
+function bindManual(){bindAuto();
   const ra=$('#rsAll');if(ra)ra.onclick=()=>confirm2(ra,'Tekan sekali lagi untuk reset',()=>{manReset((S.manual||[]).map(p=>p.id));toast('Robot Manual direset — mula semula dari $0');});
   const rc=$('#rsClosed');if(rc)rc.onclick=()=>confirm2(rc,'Tekan sekali lagi untuk kosongkan',()=>{manReset((S.manual||[]).filter(p=>p.closed).map(p=>p.id));toast('Rekod selesai dikosongkan');});
   document.querySelectorAll('#main .mrow[data-mid]').forEach(b=>b.onclick=()=>openManDetail(b.dataset.mid));
@@ -1530,7 +1536,8 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
-'Kos dagangan sebenar':'Real trading costs','Robot kira untung/rugi seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.':'The robot counts profit/loss like a real trade: buy fee + sell fee + spread, based on your platform.',
+'Kos dagangan sebenar':'Real trading costs','Belum disimpan':'Not saved','Disimpan':'Saved','Simpan kos':'Save costs','Simpan & siap':'Save & done','✓ Tetapan Robot Auto disimpan':'✓ Auto Robot settings saved',
+'Untung/rugi robot dikira seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.':'Robot profit/loss is counted like a real trade: buy fee + sell fee + spread, based on your platform.','Robot kira untung/rugi seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.':'The robot counts profit/loss like a real trade: buy fee + sell fee + spread, based on your platform.',
 'Kos sendiri':'Custom cost','Jenis order':'Order type','Exchange (order pasaran)':'Exchange (market order)','Spread / slippage (%)':'Spread / slippage (%)','Jumlah kos pergi-balik':'Total round-trip cost','Yuran setiap transaksi (%)':'Fee per transaction (%)',
 'Exchange: maker 0%, taker 0.10–0.40% ikut volum 30 hari. Instant Buy/Sell 1%.':'Exchange: maker 0%, taker 0.10–0.40% depending on 30-day volume. Instant Buy/Sell 1%.',
 'Exchange: taker 0.25–0.50% ikut volum 30 hari. Instant Buy/Sell 2%.':'Exchange: taker 0.25–0.50% depending on 30-day volume. Instant Buy/Sell 2%.',
@@ -2071,6 +2078,8 @@ EN_RX.unshift(
 [/^([+-]?[\d.]+)% sejak ditutup$/,'$1% since closed'],[/^(.+) \((\d+) hari\)$/,(m,a,b)=>`${trText(a)} (${b} days)`],
 [/^($[\d.,]+) nilai maya · sasaran (\S+) · cut loss (\S+)$/,'$1 virtual · target $2 · cut loss $3'],
 [/^(\d+)\/100 ⓘ$/,'$1/100 ⓘ'],
+[/^✓ Kos (.+) \(([\d.]+)% pergi-balik\) disimpan$/,(m,a,b)=>`✓ Cost ${trCost(a)} (${b}% round trip) saved`],
+[/^💸 (.+) · ([\d.]+)% pergi-balik$/,(m,a,b)=>`💸 ${trCost(a)} · ${b}% round trip`],
 [/^Carta 1 jam · (\S+) pada (.+) \(terkini\)$/,(m,b,c)=>`1-hour chart · ${b} at ${trText(c)} (latest)`],
 [/^Strategi Isyarat aktif \(RSI 2\): purata ([+\-−]?[\d.]+)% dalam backtest \(kos ([\d.]+)%\)\. Dengan kos anda ([\d.]+)%, jangkaan purata$/,'Active-signal strategy (RSI 2): average $1% in the backtest ($2% cost). With your $3% cost, the expected average is'],
 [/^backtest, kos ([\d.]+)%$/,'backtest, $1% cost'],
