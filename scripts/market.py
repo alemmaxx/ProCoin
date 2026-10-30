@@ -20,11 +20,31 @@ from common import analyze  # noqa: E402
 import backtest as BT  # noqa: E402
 import track  # noqa: E402
 import paper  # noqa: E402
+import strategies as ST  # noqa: E402
+from common import ema as _ema  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 COINS = os.path.join(ROOT, "data", "coins.json")
 PROVIDER = "yfinance"
 MIN_VALUE = 1_000_000   # nilai dagangan purata 20 hari minimum (USD)
+# Strategi yang digunakan untuk isyarat (dibuktikan dalam robot kajian, data/research.json):
+#   A = Isyarat aktif (Isyarat Kuat), B = Isyarat Pemerhatian
+USE = {"rsi2": "A", "brk20": "B"}
+RULE = {"rsi2": "Keluar bila harga tutup atas EMA5, atau selepas 10 hari. Cut loss 2.5× ATR.",
+        "brk20": "Trailing stop 3× ATR di bawah harga tertinggi sejak beli (naik ikut harga, tidak turun)."}
+
+
+def sstats(trs):
+    from statistics import median
+    n = len(trs)
+    if not n:
+        return {"n": 0}
+    w = [x for x in trs if x["ret"] > 0]
+    wd = sorted(x["days"] for x in w)
+    q = lambda p: wd[min(len(wd) - 1, int(p * len(wd)))] if wd else None
+    return {"n": n, "w": len(w), "p": round(len(w) / n * 100), "md": median(wd) if wd else None, "d25": q(.25), "d75": q(.75),
+            "ev": round(sum(x["ret"] for x in trs) / n * 100, 2), "aw": round(sum(x["ret"] for x in w) / len(w) * 100, 2) if w else None,
+            "cf": BT.confidence(n)}
 
 
 def load_coins():
@@ -173,6 +193,26 @@ def main():
     gstats = {k: BT.stats(tr) for k, tr in glob.items()}
     prior = {k: (st["w"] / st["n"] if st["n"] else 0.35) for k, st in gstats.items()}
 
+    # --- strategi crypto (isyarat aktif & pemerhatian)
+    btc_rows = px.get("BTC", [])
+    btc_cl = [float(r[4]) for r in btc_rows]
+    btc_e200 = _ema(btc_cl, 200)
+    btc_up = {r[0]: (btc_e200[i] is not None and btc_cl[i] > btc_e200[i]) for i, r in enumerate(btc_rows)}
+    SR, pooled = {}, {k: [] for k in USE}
+    for c, rows in px.items():
+        if len(rows) < 260:
+            continue
+        o = [float(r[1] or r[4]) for r in rows]; hh = [float(r[2] or r[4]) for r in rows]
+        ll = [float(r[3] or r[4]) for r in rows]; cc = [float(r[4]) for r in rows]; vv = [float(r[5] or 0) for r in rows]
+        dates = [r[0] for r in rows]
+        SR[c] = {}
+        for k in USE:
+            trs, _, pos = ST.run_strategy(k, o, hh, ll, cc, vv, btc_ok=lambda t, d=dates: btc_up.get(d[t], False))
+            SR[c][k] = (trs, pos)
+            pooled[k] += trs
+    PS = {k: sstats(v) for k, v in pooled.items()}
+    print("Strategi:", {k: (v["n"], v["p"], v["ev"]) for k, v in PS.items()})
+
     stocks = {}
     for s in coins:
         c = s["code"]
@@ -203,22 +243,34 @@ def main():
                     stt["cf"] = BT.confidence(stt["n"])
                     bt[k] = stt
                 ops = []
-                for act in R["active"]:
-                    k = act["k"]; stt = bt[k]
-                    if k in BT.DISABLED:
+                o_ = [float(r[1] or r[4]) for r in rows]; h_ = [float(r[2] or r[4]) for r in rows]
+                L = len(closes) - 1
+                e5 = _ema(closes, 5)
+                for k, grade in USE.items():
+                    trs, pos = SR.get(c, {}).get(k, ([], None))
+                    if not pos:
                         continue
-                    last = closes[-1]
-                    ops.append({
-                        "k": k, "p": stt["p"], "n": stt["n"], "w": stt["w"], "cf": stt["cf"],
-                        "md": stt["md"] if stt["md"] is not None else gstats[k]["md"],
-                        "d25": stt["d25"] if stt["d25"] is not None else gstats[k]["d25"],
-                        "d75": stt["d75"] if stt["d75"] is not None else gstats[k]["d75"],
-                        "ev": stt["ev"], "ago": act["t"],
-                        "en": r3(last), "tg": r3(last * (1 + act["tp"])), "sl": r3(last * (1 - act["sp"])),
-                    })
+                    t, at = pos["t"], pos["atr"]
+                    ago = L - t
+                    S = ST.STRATS[k]
+                    if ago > S["max"]:
+                        continue
+                    en = closes[-1] if ago == 0 else (o_[t + 1] or closes[t])
+                    stop = en - S["k"] * at
+                    if k == "brk20" and ago > 0:
+                        stop = max(stop, max(h_[t + 1:]) - S["k"] * at)
+                    st = PS[k]
+                    if k == "rsi2":
+                        tg = max(e5[L] or en * 1.01, en * 1.005)
+                    else:
+                        tg = en * (1 + (st.get("aw") or 5) / 100)
+                    ops.append({"k": k, "st": k, "g": grade, "p": st["p"], "n": st["n"], "w": st["w"], "cf": st["cf"],
+                                "md": st["md"], "d25": st["d25"], "d75": st["d75"], "ev": st["ev"], "ago": ago,
+                                "en": r3(en), "tg": r3(tg), "sl": r3(stop), "atr": r3(at), "rule": RULE[k]})
                 if ops and liq:
-                    ops.sort(key=lambda x: -x["p"])
+                    ops.sort(key=lambda x: (x["g"], x["ago"]))
                     item["op"] = ops
+                bt = {k: sstats(SR.get(c, {}).get(k, ([], None))[0]) for k in USE}
             keep = rows[-1830:]  # ~5 tahun: untuk carta bulanan & tahunan
             out = {"d": [r[0] for r in keep], "o": [r3(r[1]) for r in keep], "h": [r3(r[2]) for r in keep],
                    "l": [r3(r[3]) for r in keep], "c": [r3(r[4]) for r in keep], "v": [int(r[5] or 0) for r in keep]}
@@ -241,8 +293,11 @@ def main():
         "asof": asof, "provider": PROVIDER, "currency": "USD", "rawLast": raw_last, "hourFill": n_fill,
         "count": len(stocks), "priced": len(px),
         "bt": {"h": BT.H, "tgt": BT.TGT_ATR, "stp": BT.STP_ATR, "fee": BT.FEE},
-        "setups": {k: {"name": BT.SETUPS[k], "n": g["n"], "p": round(prior[k] * 100), "md": g["md"],
-                       "d25": g["d25"], "d75": g["d75"], "ev": g["ev"]} for k, g in gstats.items()},
+        "setups": {**{k: {"name": BT.SETUPS[k], "n": g["n"], "p": round(prior[k] * 100), "md": g["md"],
+                          "d25": g["d25"], "d75": g["d75"], "ev": g["ev"]} for k, g in gstats.items()},
+                   **{k: {"name": ST.STRATS[k]["name"], **PS[k], "grade": USE[k], "rule": RULE[k], "kATR": ST.STRATS[k]["k"],
+                          "max": ST.STRATS[k]["max"]} for k in USE}},
+        "strat": {k: USE[k] for k in USE},
     }
     K = [[r[0], r3(r[4])] for r in px.get("BTC", [])]
     if len(K) > 60:

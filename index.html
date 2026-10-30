@@ -404,6 +404,7 @@ canvas#cv{touch-action:pan-y;cursor:crosshair}
 @media (min-width:820px){.hero .hc{z-index:0}.hero>*:not(.hc):not(.shade){position:relative;z-index:1}}
 .fchips{display:inline-flex;gap:4px;margin-top:4px}.fchip{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--card2);color:var(--muted)}.fchip.ok{color:var(--green)}.fchip.no{color:var(--red)}
 .frow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.frow .fic{width:20px;text-align:center;font-weight:800}.frow .fl{flex:1;min-width:0}.frow b{text-align:right}
+.plan b.tx{font-size:14px!important;line-height:1.3}
 .rtab{overflow-x:auto;margin:10px 0}.rtab table{width:100%;border-collapse:collapse;font-size:12.5px}.rtab th{color:var(--muted);font-weight:600;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}.rtab th:first-child,.rtab td:first-child{text-align:left}
 .rtab td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}.rtab td small{display:block;color:var(--muted);font-size:10.5px}.rtab tr.rb td{font-weight:700;background:var(--card2)}
 /* ProCoin: rel kad dipaparkan penuh dalam grid (tiada skrol ke tepi) */
@@ -685,11 +686,25 @@ const BTH=()=>(S.market&&S.market.meta.bt)||{h:30,tgt:2,stp:1.25,fee:0.002};
 const BURSA_HOL=new Set();
 const isTD=x=>true;
 function addTradingDays(d,n){const x=parseD(d);let k=0;while(k<n){x.setDate(x.getDate()+1);if(isTD(x))k++;}return isoD(x);}
-function opsFor(code){const m=mk(code);if(!m||!m.op)return [];let o=m.op;if(S.settings.style==='ketat')o=o.filter(x=>(x.md||0)>=5);return o;}
+function opsFor(code){const m=mk(code);if(!m||!m.op)return [];return m.op.filter(x=>stratOf(x.k)).sort((a,b)=>'AB'.indexOf(stratOf(a.k).grade)-'AB'.indexOf(stratOf(b.k).grade));}
 function bestOp(code){const o=opsFor(code);return o.length?o[0]:null;}
 function breakeven(op){const tp=op.tg/op.en-1,sp=1-op.sl/op.en;return (sp+BTH().fee)/(tp+sp);}
 function probBar(p,be){return `<div class="pbar"><span style="width:${p}%"></span><i style="left:${(be*100).toFixed(0)}%" title="Titik pulang modal"></i></div>`;}
-function opCard(code,op,m){
+function opCard(code,op,m){if(op.st)return stratCard(code,op,m);return opCard0(code,op,m);}
+function stratCard(code,op,m){const RS=rateSignal({...op,code});const SG=stratOf(op.k)||{};const sp=(1-op.sl/op.en)*100;const now=nowPx(code);
+  const exitTxt=op.st==='rsi2'?`Harga tutup atas EMA5 (kini ≈ ${px(op.tg)})`:`Trailing stop ${SG.kATR||3}× ATR (naik ikut harga)`;
+  return `<div class="opc"><div class="row between"><div><b>${esc(setupName(op.k))}</b><div class="muted">${op.ago?`Bermula ${op.ago} hari lalu`:'Isyarat hari ini'}</div></div></div>
+   <div class="opp"><span class="big">${op.p}%</span><span class="muted">dagangan untung dalam backtest strategi ini (semua coin, 5 tahun)</span></div>
+   <div style="margin:0 0 8px">${rateHTML({...op,code})}</div>
+   <div class="plan">
+    <div><span>${op.ago?'Harga masuk':'Harga semasa'}</span><b>${px(op.en)}</b>${op.ago&&now?`<small>kini ${px(now)} (${((now/op.en-1)*100).toFixed(1)}%)</small>`:''}</div>
+    <div><span>Keluar (untung)</span><b class="up tx">${exitTxt}</b></div>
+    <div><span>${op.st==='brk20'&&op.ago?'Trailing stop kini':'Cut loss'}</span><b class="dn">${px(op.sl)} <small>${sp>=0?'−':'+'}${Math.abs(sp).toFixed(1)}%</small></b></div>
+    <div><span>Purata setiap dagangan</span><b class="${op.ev>=0?'up':'dn'}">${op.ev>0?'+':''}${op.ev}%</b><small>selepas kos ${(BTH().fee*100).toFixed(1)}%</small></div>
+    <div><span>Tempoh biasa (untung)</span><b>${op.md!=null?Math.round(op.md)+' hari':'-'}</b><small>${op.d25!=null?`biasanya ${op.d25}–${op.d75} hari · had ${SG.max||'-'} hari`:''}</small></div>
+    <div><span>Bukti sejarah</span><b>${op.n} dagangan; ${op.w} untung</b><small>keyakinan ${op.cf||'-'}</small></div>
+   </div><p class="muted" style="font-size:12px;margin:8px 0 0">${esc(op.rule||SG.rule||'')}</p></div>`;}
+function opCard0(code,op,m){
   const be=breakeven(op);const tp=(op.tg/op.en-1)*100,sp=(1-op.sl/op.en)*100;const H=BTH().h;
   const short=(op.md||0)<5;const edge=op.p/100-be;
   const RS=rateSignal({...op,code});
@@ -711,8 +726,8 @@ function oppSection(code,blocked){
   const m=mk(code);if(!m)return '';
   const ops=opsFor(code);
   let h=`<div class="card"><h2>Isyarat & paras harga</h2>`;
-  h+=ops.length?ops.map(o=>opCard(code,o,m)).join(''):`<p class="muted" style="margin:0 0 6px">Tiada isyarat teknikal aktif untuk coin ini dalam 3 hari terakhir.</p>`;
-  h+=`</div>`+filterCardHTML(code)+`<div class="card"><div id="btHist"></div><details style="margin-top:10px"><summary class="muted">Bagaimana angka ini dikira?</summary><p class="muted">Robot menguji setiap kali isyarat yang sama berlaku dalam sejarah ~5 tahun coin ini. Bermula dari harga buka esoknya, robot mencatat sama ada harga sampai paras atas (${BTH().tgt}× ATR) atau paras bawah (${BTH().stp}× ATR) dahulu, atau tiada dalam ${BTH().h} hari. Kos ${(BTH().fee*100).toFixed(1)}% diambil kira. Untuk coin bersampel kecil, kebarangkalian ditarik ke arah purata pasaran supaya tidak terlebih yakin. Ini statistik sejarah, bukan cadangan beli atau jual.</p></details></div>`;
+  h+=ops.length?ops.map(o=>opCard(code,o,m)).join(''):`<p class="muted" style="margin:0 0 6px">Tiada isyarat aktif untuk coin ini sekarang.</p>`;
+  h+=`</div>`+filterCardHTML(code)+`<div class="card"><div id="btHist"></div><details style="margin-top:10px"><summary class="muted">Bagaimana angka ini dikira?</summary><p class="muted">Isyarat datang daripada strategi yang lulus backtest robot kajian (🧪 Keputusan backtest). Setiap strategi diuji atas semua coin selama ~5 tahun: beli pada harga buka esok selepas isyarat, keluar ikut peraturan strategi (EMA5 / trailing stop / had hari), kos ${(BTH().fee*100).toFixed(1)}% ditolak. % untung dan purata ialah statistik gabungan semua coin, bukan satu coin sahaja, supaya tidak terlebih yakin. Ini statistik sejarah, bukan cadangan beli atau jual.</p></details></div>`;
   return h;
 }
 function btHistHTML(bt){
@@ -744,15 +759,14 @@ function topSignals(n=5,mode){
   const add=x=>{const m=mk(x.code);if(!m||m.s!=='ok'||!x.en||!x.tg||!x.sl||DIS_SETUP.has(x.k))return;
     if(S.settings.style==='ketat'&&(x.md||0)<5)return;
     const key=x.code+x.k+x.start;if(seen.has(key))return;seen.add(key);
-    const tp=x.tg/x.en-1,sp=1-x.sl/x.en,be=(sp+fee)/(tp+sp),edge=x.p/100-be;if(edge<=0)return;
-    const now=m.c,hitUp=now!=null&&now>=x.tg,hitDn=now!=null&&now<=x.sl;if(hitUp||hitDn)return;
+    if(!stratOf(x.k))return;const be=.5,edge=x.p/100-be;
+    const now=m.c,hitDn=now!=null&&now<=x.sl;if(hitDn)return;
     const el=tdBetween(x.start,asof),md=Math.max(1,Math.round(x.md||0));
     out.push({...x,be,edge,now,el,md,end:endFor(x.start,md),passed:el>md,limitEnd:addTradingDays(x.start,BTH().h)});};
   Object.entries(M.stocks).forEach(([c,v])=>(v.op||[]).forEach(o=>{if(o.ev>0)add({code:c,name:v.n,k:o.k,p:o.p,start:subTradingDays(v.d,o.ago||0),en:o.en,tg:o.tg,sl:o.sl,md:o.md,cf:o.cf,w:o.w,n:o.n,ev:o.ev});}));
-  ((S.track&&S.track.openList)||[]).forEach(s=>add({code:s.c,name:s.n,k:s.k,p:s.p,start:s.d,en:s.en,tg:s.tg,sl:s.sl,md:s.md,n:s.ns,w:s.ws,ev:s.ev}));
   const best={};out.filter(x=>x.start===asof).forEach(x=>{if(!best[x.code]||x.edge>best[x.code].edge)best[x.code]=x;});
   const gr=x=>'ABCD'.indexOf(rateSignal(x).g);
-  Object.keys(best).forEach(k=>{const g=rateSignal(best[k]).g;if(mode==='obs'?(g==='A'||g==='D'):(!S.settings.showMod&&g!=='A'))delete best[k];});
+  Object.keys(best).forEach(k=>{const g=rateSignal(best[k]).g;if(mode==='obs'?(g!=='B'):(g!=='A'))delete best[k];});
   return Object.values(best).sort((a,b)=>gr(a)-gr(b)||b.edge-a.edge||b.p-a.p).slice(0,n);
 }
 
@@ -805,7 +819,10 @@ function openResearch(){const R=S.research;
     return `<tr class="${r.key==='semua'||r.key==='h4_base'?'rb':''}"><td>${esc(r.name)}${act?' <span class="badge b-gold">aktif</span>':''}</td><td>${r.n||0}</td><td>${r.win!=null?r.win+'%':'-'}</td><td class="${r.avg==null?'':r.avg>=0?'up':'dn'}">${f(r.avg)}${r.ci!=null?`<small>±${r.ci}</small>`:''}</td><td>${r.pf??'-'}</td></tr>`;};
   const M=R.model;const rk=R.rank||{};
   openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">🧪 Keputusan backtest</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div>
-   <p class="muted" style="font-size:12.5px;margin:6px 0 8px">${R.coins} coin · ${fmtD(R.start)} hingga ${fmtD(R.end)} · sasaran ${R.tgt}× ATR, cut loss ${R.stp}× ATR, ${R.h} hari, kos ${(R.fee*100).toFixed(1)}%. Walk-forward: setiap isyarat dinilai guna data sebelum harinya sahaja.</p>
+   <p class="muted" style="font-size:12.5px;margin:6px 0 8px">${R.coins} coin · ${fmtD(R.start)} hingga ${fmtD(R.end)} · kos ${(R.fee*100).toFixed(1)}% setiap dagangan. Beli pada harga buka esok selepas isyarat; tiada data masa depan digunakan.</p>
+   ${R.strat?`<h3 style="margin:10px 0 4px">Strategi (semua coin)</h3><div class="rtab"><table><tr><th>Strategi</th><th>n</th><th>Untung</th><th>Purata</th><th>PF</th></tr>${R.strat.map(s=>{const a=s.all||{},used=stratOf(s.key);return `<tr class="${used?'rb':''}"><td>${esc(s.name)}${used?` <span class="badge ${used.grade==='A'?'b-ok':'b-warn'}">${used.grade==='A'?'Isyarat aktif':'Pemerhatian'}</span>`:''}<small>separuh 1: ${f(s.h1&&s.h1.avg)} · separuh 2: ${f(s.h2&&s.h2.avg)}</small></td><td>${a.n||0}</td><td>${a.win!=null?a.win+'%':'-'}</td><td class="${a.avg>=0?'up':'dn'}">${f(a.avg)}${a.ci!=null?`<small>±${a.ci}</small>`:''}</td><td>${a.pf??'-'}</td></tr>`;}).join('')}</table></div>
+   <p class="muted" style="font-size:12px">Isyarat aktif = strategi yang purata pulangannya kekal positif walaupun diambil had bawah julat keyakinan, dan positif dalam kedua-dua separuh tempoh. ${R.hold&&R.hold.BTC!=null?`Perbandingan: beli & pegang BTC dalam tempoh sama ${f(R.hold.BTC)}.`:''}</p>
+   <h3 style="margin:14px 0 4px">Penapis tambahan (diuji atas isyarat asal)</h3>`:''}
    <div class="nfil gl3">${R.groups.map((g,i)=>`<button class="btn sm ${i===RSG?'gold':'sec'}" data-rg="${i}">${esc(g.name.replace(' (tanpa gred)',''))}</button>`).join('')}</div>
    ${(()=>{const sig=G.rows.filter(r=>r.key!=='semua'&&r.key!=='h4_base'&&r.n>=30&&r.ci!=null&&base.avg!=null&&r.avg-r.ci>base.avg);
      return `<div class="alert ${sig.length?'a-green':'a-amber'}" style="margin:10px 0 0"><b>Kesimpulan:</b> ${sig.length?`Terbukti lebih baik (melepasi julat keyakinan): ${sig.map(r=>esc(r.name)).join(', ')}.`:`Tiada penapis yang terbukti meningkatkan purata pulangan secara bermakna — perbezaannya masih dalam julat keyakinan. Penapis tidak diaktifkan supaya tidak "overfit".`} Asas: ${base.n||0} isyarat, ${base.win??'-'}% menang, purata ${f(base.avg)} setiap isyarat.</div>`;})()}
@@ -826,8 +843,16 @@ function openResearch(){const R=S.research;
    <div class="alert a-amber" style="margin:12px 0 0">Nota: % peluang pada setiap isyarat dikira daripada keseluruhan sejarah coin itu, jadi ia cenderung terlebih yakin. Ujian walk-forward di atas (hanya guna data sebelum hari isyarat) ialah ukuran yang lebih jujur.</div>
    <div class="disc">Keputusan sejarah, bukan jaminan. Dikemas kini setiap Ahad (${fmtD(R.asof)}).</div>`);
   document.querySelectorAll('[data-rg]').forEach(b=>b.onclick=()=>{RSG=+b.dataset.rg;openResearch();});}
+/* Strategi yang digunakan (dari robot harian): gred A = Isyarat aktif, B = Isyarat Pemerhatian */
+function stratOf(k){const s=S.market&&S.market.meta.setups&&S.market.meta.setups[k];return s&&s.grade?s:null;}
 function rateSignal(x){
   // x: {p, en, tg, sl, n (sampel), w, ev, k}
+  const SG=stratOf(x.k);
+  if(SG){const g=(x.ev!=null&&x.ev<=0)?'D':SG.grade;
+    const G={A:['Isyarat Kuat','b-ok','Strategi ini terbukti positif dalam backtest walk-forward semua coin (purata pulangan kekal positif walaupun diambil had bawah julat keyakinan).'],
+             B:['Isyarat Pemerhatian','b-warn','Strategi ini positif dalam backtest, tetapi julat keyakinannya masih termasuk sifar. Sesuai dipantau atau diuji dengan Robot Manual.'],
+             D:['Isyarat Lemah','b-no','Statistik terkini strategi ini tidak positif.']}[g];
+    return {g,lbl:G[0],cls:G[1],txt:G[2],bits:x.n!=null?[`Strategi ini diuji ${x.n} kali atas semua coin (5 tahun); ${x.p}% untung, purata ${x.ev>0?'+':''}${x.ev}% setiap dagangan selepas kos`]:[],edge:x.p/100-.5,be:.5};}
   const fee=BTH().fee;const tp=x.tg/x.en-1,sp=1-x.sl/x.en,be=(sp+fee)/(tp+sp),edge=x.p/100-be;
   const n=x.n==null?null:+x.n;
   let g;
@@ -928,8 +953,8 @@ function showSysBan(){const b=$('#sysban');if(!b)return;const lv=SYS.level;if(lv
 /* ===== CARA APP BERJALAN (Tetapan) ===== */
 const HOW=[
  ['📊','Bila isyarat dijana?',
-  'Sekali sehari, sekitar 8.30 pagi waktu Malaysia. Crypto berdagang 24 jam, jadi "harga tutup harian" ialah harga pada 8 pagi waktu Malaysia (12 tengah malam UTC). Robot ambil harga tutup semua coin, kira indicator, dan banding dengan sejarah 5 tahun setiap coin. Isyarat itu untuk hari ini. Jika data lewat, robot cuba semula pukul 11.30 pagi. Isyarat guna harga tutup harian, jadi ia tidak berubah sepanjang hari.',
-  'When are signals generated?','Once a day, around 8.30am Malaysia time. Crypto trades 24 hours, so the "daily close" is the price at 8am Malaysia time (midnight UTC). The robot takes every coin\'s closing price, computes the indicators and compares them with each coin\'s 5-year history. Signals are for the current day. If data is late, the robot retries at 11.30am. Signals use daily closing prices, so they do not change during the day.'],
+  'Sekali sehari, sekitar 8.30 pagi waktu Malaysia. Crypto berdagang 24 jam, jadi "harga tutup harian" ialah harga pada 8 pagi waktu Malaysia (12 tengah malam UTC). Robot ambil harga tutup semua coin dan semak strategi yang lulus backtest: RSI(2) lantunan dalam trend menaik (Isyarat aktif) dan Breakout 20 hari (Pemerhatian). Isyarat itu untuk hari ini. Jika data lewat, robot cuba semula pukul 11.30 pagi. Isyarat guna harga tutup harian, jadi ia tidak berubah sepanjang hari.',
+  'When are signals generated?','Once a day, around 8.30am Malaysia time. Crypto trades 24 hours, so the "daily close" is the price at 8am Malaysia time (midnight UTC). The robot takes every coin\'s closing price and checks the strategies that passed the backtest: RSI(2) bounce in an uptrend (Active signal) and 20-day Breakout (Watch). Signals are for the current day. If data is late, the robot retries at 11.30am. Signals use daily closing prices, so they do not change during the day.'],
  ['🟢','Harga terkini',
   'Bila app dibuka, harga semua coin dikemas kini setiap 1 minit secara masa nyata (CoinGecko). Jika tidak dapat, app guna harga robot GitHub (setiap 30 minit, lewat ±15 minit). Harga ini untuk paparan. Isyarat, sasaran, cut loss dan Robot tetap guna harga tutup harian.',
   'Latest price','While the app is open, every coin\'s price updates every minute in real time (CoinGecko). If that is unavailable, the app uses the GitHub robot price (every 30 minutes, ~15 minutes delayed). This price is for display. Signals, targets, cut loss and the Robot still use daily closing prices.'],
@@ -1098,10 +1123,10 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
   const size=()=>{if(free==null)return +a.stake||20;const per=Math.round(eq/5*100)/100;const amt=free>=per?per:(free>=per*.5?Math.round(free*100)/100:null);if(amt!=null)free-=amt;return amt;};
   const r6=v=>+(+v).toPrecision(6),now=new Date().toISOString(),add=[];
   if(a.sig){const L=[];Object.entries(M.stocks).forEach(([c,v])=>{if(!v.op||v.liq===0||!v.c)return;let best=null;
-      v.op.forEach(o=>{if((o.ago||0)!==0||!(o.ev>0)||!o.en)return;const tp=o.tg/o.en-1,sp=1-o.sl/o.en,edge=o.p/100-(sp+fee)/(tp+sp);if(edge>=.10&&(o.n==null||o.n>=8)&&!filterFails(c).length&&(!best||edge>best.e))best={e:edge,o};});
-      if(best)L.push({code:c,name:v.n,c:v.c,o:best.o,e:best.e,champ:!!(v.va&&v.sc/v.va>=.75)});});
+      v.op.forEach(o=>{const SG=stratOf(o.k);if((o.ago||0)!==0||!(o.ev>0)||!o.en||!SG||SG.grade!=='A'||filterFails(c).length)return;if(!best||o.ev>best.e)best={e:o.ev,o};});
+      if(best)L.push({code:c,name:v.n,c:v.c,o:best.o,e:best.e});});
     L.sort((x,y)=>y.e-x.e).forEach(x=>{const id=`auto-${x.code}-${asof}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
-      add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(x.c),stake:amt,tg:r6(x.c*(1+tpp/100)),sl:r6(x.c*x.o.sl/x.o.en),tp:tpp,md:x.o.md?Math.round(x.o.md):null,hz:x.o.md?Math.max(1,Math.round(x.o.md)):null,at:now});have.add(x.code);});}
+      add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(x.c),stake:amt,tg:r6(x.o.tg),sl:r6(x.o.sl),st:x.o.st,atr:x.o.atr,hz:stratOf(x.o.k).max||null,md:x.o.md?Math.round(x.o.md):null,at:now});have.add(x.code);});}
   if(a.news)potNews().forEach(x=>{const m=mk(x.code);if(!m||m.liq===0||!m.c)return;const id=`auto-${x.code}-n${x.n.d}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
     const c=nowPx(x.code)||m.c,at=S.cache[x.code]&&S.cache[x.code].atr,sp=at?Math.min(Math.max(1.25*at/c,.02),.25):.05;
     add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,at:now});have.add(x.code);});
@@ -1112,11 +1137,19 @@ function manDelete(id){S.manual=(S.manual||[]).filter(x=>x.id!==id);S.manDel=[..
 function manOpen(code){return (S.manual||[]).find(p=>p.code===code&&!p.closed);}
 function manLevels(code,en){
   const sg=signalFor(code),m=mk(code);
-  if(sg&&sg.en&&m&&m.c!=null&&m.c<sg.tg&&m.c>sg.sl)return {tg:en*sg.tg/sg.en,sl:en*sg.sl/sg.en};
+  if(sg&&sg.en&&m&&m.c!=null&&m.c>sg.sl)return {tg:Math.max(en*1.005,en*sg.tg/sg.en),sl:Math.min(en*.995,en*sg.sl/sg.en)};
   const a=S.cache[code]&&S.cache[code].atr;const cl=(x,lo,hi)=>Math.min(Math.max(x,lo),hi);
   const tp=a?cl(2*a/en,.03,.40):.08,sp=a?cl(1.25*a/en,.02,.25):.05;return {tg:en*(1+tp),sl:en*(1-sp)};}
 function manEval(p){
   const bars=S.cache[p.code]&&S.cache[p.code].bars;if(!bars)return null;
+  if(p.st==='rsi2'||p.st==='brk20'){const cl=bars.map(b=>b.c),e5=ema(cl,5);const i0=bars.findIndex(b=>p.inc?b.d>=p.d:b.d>p.d);if(i0<0)return null;
+    const max=p.hz||(p.st==='rsi2'?10:120),k=p.st==='rsi2'?2.5:3;let stop=p.sl,hi=p.en;
+    for(let j=i0;j<bars.length&&j-i0<max;j++){const b=bars[j];
+      if(b.l<=stop){const x=Math.min(stop,j>i0?b.o:stop);return {res:x>p.en?'W':'L',exit:x,end:b.d,days:j-i0+1};}
+      if(p.st==='brk20'&&p.atr){hi=Math.max(hi,b.h);stop=Math.max(stop,hi-k*p.atr);p.trail=stop;}
+      if(p.st==='rsi2'&&e5[j]!=null&&b.c>e5[j])return {res:b.c>p.en?'W':'L',exit:b.c,end:b.d,days:j-i0+1};}
+    if(bars.length-i0>=max){const b=bars[i0+max-1];return {res:b.c>p.en?'W':'T',exit:b.c,end:b.d,days:max};}
+    return null;}
   const after=bars.filter(b=>p.inc?b.d>=p.d:b.d>p.d),H=hzOf(p);
   for(let i=0;i<Math.min(after.length,H);i++){const b=after[i];
     if(b.l<=p.sl)return {res:'L',exit:p.sl,end:b.d,days:i+1};
@@ -1153,7 +1186,7 @@ function openManual(code){
     $('#mxDel').onclick=()=>{manDelete(P.id);toast('Dipadam');after();};}
   else $('#mGo').onclick=()=>{const st=num($('#mS').value),en=num($('#mE').value),tg=num($('#mT').value),sl=num($('#mL').value),dt=$('#mD').value;
     if(!(st>0&&en>0))return toast('Masukkan nilai maya dan harga masuk');if(!(tg>en&&sl<en&&sl>0))return toast('Paras atas mesti lebih tinggi dan paras bawah lebih rendah daripada harga masuk');
-    const sg=signalFor(code);S.manual=S.manual||[];S.manual.push({id:uid(),inc:1,at:new Date().toISOString(),code,name:nm,d:dt||today(),en,stake:st,tg,sl,md:sg&&sg.md?Math.round(sg.md):null});
+    const sg=signalFor(code);S.manual=S.manual||[];S.manual.push({id:uid(),inc:1,at:new Date().toISOString(),code,name:nm,d:dt||today(),en,stake:st,tg,sl,md:sg&&sg.md?Math.round(sg.md):null,...(sg&&sg.st?{st:sg.st,atr:sg.atr,hz:(stratOf(sg.k)||{}).max||null}:{})});
     save();toast('Ditambah ke Robot Manual');getBars(code).catch(()=>{});close();closeSheet();goTab('robot');};
 }
 function mtag(p){return p.src==='A'?'<span class="mtag a">A</span>':'<span class="mtag m">M</span>';}
@@ -1194,7 +1227,7 @@ function maSplitHTML(M){const g=k=>M.filter(p=>(p.src==='A')===(k==='A'));const 
 function rManual(){
   manRefresh();const M=(S.manual||[]).slice();const op=M.filter(p=>!p.closed),cl=M.filter(p=>p.closed).sort((a,b)=>b.closed.end.localeCompare(a.closed.end));
   const w=cl.filter(p=>p.closed.res==='W').length,pnl=cl.reduce((t,p)=>t+manPnl(p,p.closed.exit),0),opn=op.reduce((t,p)=>{const m=mk(p.code);return t+(m&&m.c?manPnl(p,m.c):0);},0);
-  let h=`<div class="card"><h2>🤖 Robot</h2><p class="muted" style="margin-top:0">Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik bila sampai sasaran, cut loss atau 30 hari.</p>
+  let h=`<div class="card"><h2>🤖 Robot</h2><p class="muted" style="margin-top:0">Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.</p>
     <div class="mstat"><div><b>${op.length}</b><span>Sedang diuji</span></div><div><b class="${opn>=0?'up':'dn'}">${rmS(opn)}</b><span>Untung/rugi kini</span></div><div><b>${cl.length?Math.round(w/cl.length*100)+'%':'-'}</b><span>Ketepatan</span></div><div><b class="${pnl>=0?'up':'dn'}">${cl.length?rmS(pnl):'-'}</b><span>Untung/rugi selesai</span></div></div>${maSplitHTML(M)}${M.length?`<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">${cl.length?'<button class="btn sm sec" id="rsClosed">Kosongkan yang selesai</button>':''}<button class="btn sm sec" id="rsAll">↺ Reset semua</button></div>`:''}</div>`;
   h+=autoCardHTML();
   if(M.length){const cs=cl.slice().sort((a,b)=>a.closed.end.localeCompare(b.closed.end));let cum=0;const first=M.map(p=>p.d).sort()[0];
@@ -1235,10 +1268,10 @@ function rRobot(){$('#main').innerHTML=rManual();bindManual();}
 function signalFor(code){
   // isyarat terkini untuk coin ini: aktif sekarang, atau yang sedang dipantau robot/5 terkuat
   const M=S.market;if(!M)return null;const m=mk(code);if(!m)return null;let best=null;
-  (m.op||[]).forEach(o=>{if(o.ev>0){const x={k:o.k,p:o.p,start:subTradingDays(m.d,o.ago||0),en:o.en,tg:o.tg,sl:o.sl,md:o.md,n:o.n,w:o.w,ev:o.ev};if(!best||x.p>best.p)best=x;}});
+  (m.op||[]).forEach(o=>{if(o.ev>0&&stratOf(o.k)){const x={k:o.k,st:o.st,atr:o.atr,p:o.p,start:subTradingDays(m.d,o.ago||0),en:o.en,tg:o.tg,sl:o.sl,md:o.md,n:o.n,w:o.w,ev:o.ev};if(!best||'AB'.indexOf(stratOf(x.k).grade)<'AB'.indexOf(stratOf(best.k).grade))best=x;}});
   const more=[...((S.track&&S.track.openList)||[]).filter(s=>s.c===code).map(s=>({k:s.k,p:s.p,start:s.d,en:s.en,tg:s.tg,sl:s.sl,md:s.md,n:s.ns,w:s.ws,ev:s.ev})),
     ...Object.values(S.t5||{}).filter(t=>t.code===code).map(t=>({k:t.k,p:t.p,start:t.start,en:t.en,tg:t.tg,sl:t.sl,md:t.md}))];
-  more.filter(x=>!DIS_SETUP.has(x.k)).forEach(x=>{if(!best||x.start>best.start)best=x;});
+  more.filter(x=>stratOf(x.k)).forEach(x=>{if(!best||x.start>best.start)best=x;});
   return best;
 }
 function stockStatus(code,name){
@@ -1704,6 +1737,16 @@ const EN_PHRASE=[
 ];
 
 Object.assign(EN_EXACT,{
+'Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.':'Coins being tested: M = Manual (you tap ✍️ Manual on a coin), A = Auto (the robot enters by itself). All close automatically by the strategy rules (EMA5 / trailing stop), cut loss or day limit.','Penapis tambahan (diuji atas isyarat asal)':'Extra filters (tested on the original signals)',
+'Strategi (semua coin)':'Strategies (all coins)','Penapis tambahan':'Extra filters','Strategi':'Strategy','Untung':'Profitable','Isyarat aktif':'Active signal','Pemerhatian':'Watch',
+'Isyarat asal (4 corak, sasaran 2× ATR, cut loss 1.25× ATR)':'Original signals (4 patterns, 2× ATR target, 1.25× ATR cut loss)','Breakout 20 hari, atas EMA200 + trailing 3× ATR':'20-day breakout, above EMA200 + 3× ATR trailing','Breakout 20 hari + BTC atas EMA200 + trailing 3× ATR':'20-day breakout + BTC above EMA200 + 3× ATR trailing','Breakout 55 hari + trailing stop 3× ATR':'55-day breakout + 3× ATR trailing stop','Breakout 55 hari + BTC atas EMA200 + trailing 3× ATR':'55-day breakout + BTC above EMA200 + 3× ATR trailing','EMA20 lintas atas EMA50 (atas EMA200) + trailing 3× ATR':'EMA20 crosses above EMA50 (above EMA200) + 3× ATR trailing',
+'Keluar (untung)':'Exit (profit)','Cut loss':'Cut loss','Trailing stop kini':'Current trailing stop','Purata setiap dagangan':'Average per trade','Tempoh biasa (untung)':'Typical period (profit)','Bukti sejarah':'Historical evidence','Harga masuk':'Entry price','Harga semasa':'Current price','Isyarat hari ini':'Signal today',
+'dagangan untung dalam backtest strategi ini (semua coin, 5 tahun)':'of trades profitable in this strategy backtest (all coins, 5 years)','Isyarat Pemerhatian':'Watch signal','Tiada isyarat aktif untuk coin ini sekarang.':'No active signal for this coin right now.',
+'RSI(2) bawah 10 dalam trend menaik (lantunan pendek)':'RSI(2) below 10 in an uptrend (short bounce)','Breakout 20 hari + trailing stop 3× ATR':'20-day breakout + 3× ATR trailing stop',
+'Keluar bila harga tutup atas EMA5, atau selepas 10 hari. Cut loss 2.5× ATR.':'Exit when the price closes above EMA5, or after 10 days. Cut loss 2.5× ATR.','Trailing stop 3× ATR di bawah harga tertinggi sejak beli (naik ikut harga, tidak turun).':'Trailing stop 3× ATR below the highest price since buying (rises with price, never falls).',
+'Strategi ini terbukti positif dalam backtest walk-forward semua coin (purata pulangan kekal positif walaupun diambil had bawah julat keyakinan).':'This strategy proved positive in the walk-forward backtest across all coins (average return stays positive even at the low end of the confidence range).',
+'Strategi ini positif dalam backtest, tetapi julat keyakinannya masih termasuk sifar. Sesuai dipantau atau diuji dengan Robot Manual.':'This strategy is positive in the backtest, but its confidence range still includes zero. Suitable to watch or test with the Manual Robot.',
+'Statistik terkini strategi ini tidak positif.':'This strategy\'s latest statistics are not positive.',
 'Penapis isyarat':'Signal filters','Keadaan Bitcoin':'Bitcoin condition','Trend carta 4 jam':'4-hour chart trend','Kekuatan berbanding BTC (30 hari)':'Strength vs BTC (30 days)','Fear & Greed (seluruh pasaran)':'Fear & Greed (whole market)','Funding rate (perpetual)':'Funding rate (perpetual)','Open interest':'Open interest',
 'BTC menaik':'BTC rising','BTC mendatar':'BTC sideways','BTC menurun':'BTC falling','menaik':'rising','tidak menaik':'not rising','tiada data':'no data','Sangat takut':'Extreme fear','Takut':'Fear','Tamak':'Greed','Sangat tamak':'Extreme greed',
 '🧪 Keputusan backtest penapis':'🧪 Filter backtest results','🧪 Keputusan backtest':'🧪 Backtest results','Penapis':'Filter','Menang':'Won','Purata':'Average',
@@ -1757,7 +1800,7 @@ Object.assign(EN_EXACT,{
 'Mati · tekan untuk hidupkan':'Off · tap to turn on','Siap':'Done','tiada jenis dipilih':'no type chosen',
 
 '📱 = sampai ke telefon (walaupun app tutup)':'📱 = reaches your phone (even when the app is closed)','🔔 = dalam loceng app sahaja':'🔔 = in the app bell only','Isyarat Kuat & Champion':'Strong signals & Champion','Berita baik hari ini untuk coin yang ada isyarat.':"Today's good news for coins with a signal.",'Robot (Manual & Auto)':'Robot (Manual & Auto)','Coin dalam tab Robot sampai sasaran, cut loss, cukup hari, atau Robot Auto masuk coin baru.':'A coin in the Robot tab hits its target, cut loss or day limit, or Auto Robot enters a new coin.','5 isyarat terkuat':'Top 5 signals','Ringkasan 5 isyarat terbaik: harga masuk, paras atas/bawah, tempoh.':'Summary of the 5 best signals: entry price, upper/lower levels, period.','Harga':'Price','Harga sampai paras yang anda tetapkan, atau pegangan turun lebih % di bawah.':'Price reaches the level you set, or a holding falls more than the % below.','Isyarat teknikal':'Technical signals','Golden/death cross dan RSI melampau untuk coin anda.':'Golden/death cross and extreme RSI for your coins.',
-'Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik bila sampai sasaran, cut loss atau 30 hari.':'Coins being tested: M = Manual (you tap ✍️ Manual on a coin), A = Auto (the robot enters by itself). All close automatically at the target, cut loss or after 30 days.',
+'Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.':'Coins being tested: M = Manual (you tap ✍️ Manual on a coin), A = Auto (the robot enters by itself). All close automatically at the target, cut loss or after 30 days.',
 '🤖 Robot Auto':'🤖 Auto Robot','🤖 Robot':'🤖 Robot','🟢 Isyarat Kuat (Ringkasan isyarat aktif)':'🟢 Strong signals (Active signals summary)','🏆 Champion sahaja':'🏆 Champion only','📰 Berita Berpotensi':'📰 Potential news',
 'Nilai maya setiap posisi (USD)':'Virtual amount per position (USD)','🤖 Robot Auto dihidupkan':'🤖 Auto Robot turned on','Robot Auto dimatikan':'Auto Robot turned off','Robot Auto':'Auto Robot',
 '🟢 Isyarat Kuat':'🟢 Strong signal','📰 Berita':'📰 News','Bila hidup, robot masuk ujian sendiri setiap pagi (selepas data harian) untuk jenis yang anda pilih, guna harga tutup terakhir. Coin ini ditanda A dalam senarai.':'When on, the robot enters tests by itself every evening (after the data) for the types you choose, at the last closing price. These coins are marked A in the list.',
@@ -1945,6 +1988,12 @@ Object.assign(EN_EXACT,{
 'Paras ini naik mengikut harga tertinggi sejak tarikh belian dan tidak pernah turun. Harga tutup di bawahnya menandakan momentum menurun.':'This level rises with the highest price since the purchase date and never falls. A close below it signals weakening momentum.',
 });
 EN_RX.unshift(
+[/^Bacaan konteks pasaran\. Funding positif tinggi = ramai trader "long" \(risiko jatuh mendadak\)\. Dalam backtest, tiada penapis ini yang terbukti meningkatkan ketepatan isyarat, jadi ia tidak mengubah gred isyarat\. Lihat 🧪 Keputusan backtest\.(?: Dikira (.+) UTC\.)?$/,(m,a)=>'Market context readings. High positive funding = many traders are "long" (risk of a sharp drop). In the backtest none of these filters proved to improve signal accuracy, so they do not change the signal grade. See 🧪 Backtest results.'+(a?' Calculated '+a+' UTC.':'')],
+[/^(\d+) coin · (.+) hingga (.+) · kos ([\d.]+)% setiap dagangan\. Beli pada harga buka esok selepas isyarat; tiada data masa depan digunakan\.$/,'$1 coins · $2 to $3 · $4% cost per trade. Buy at the next day\'s open after the signal; no future data used.'],
+[/^separuh 1: (.+) · separuh 2: (.+)$/,'first half: $1 · second half: $2'],
+[/^Strategi ini diuji (\d+) kali atas semua coin \(5 tahun\); (\d+)% untung, purata ([+\-−]?[\d.]+)% setiap dagangan selepas kos$/,'Tested $1 times across all coins (5 years); $2% profitable, average $3% per trade after costs'],
+[/^Bermula (\d+) hari lalu$/,'Started $1 days ago'],[/^Harga tutup atas EMA5 \(kini ≈ (.+)\)$/,'Close above EMA5 (now ≈ $1)'],[/^Trailing stop ([\d.]+)× ATR \(naik ikut harga\)$/,'Trailing stop $1× ATR (rises with price)'],
+[/^(\d+) dagangan; (\d+) untung$/,'$1 trades; $2 profitable'],[/^biasanya (\d+)–(\d+) hari · had (\S+) hari$/,'usually $1–$2 days · limit $3 days'],
 [/^(\S+) · Robot Auto$/,'$1 · Auto Robot'],
 [/^(\d+) coin dengan berita positif hari ini$/,'$1 coins with positive news today'],
 [/^Coin dengan berita bernada positif \(▲\) hari ini, (.+)\. Senarai bermula baharu setiap hari selepas 12 tengah malam\.$/,(m,a)=>`Coins with positive-toned news (▲) today, ${trText(a)}. The list starts fresh every day after midnight.`],
@@ -2071,6 +2120,16 @@ EN_RX.unshift(
 
 /* ===== ProCoin: terjemahan tambahan ===== */
 Object.assign(EN_EXACT,{
+'Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.':'Coins being tested: M = Manual (you tap ✍️ Manual on a coin), A = Auto (the robot enters by itself). All close automatically by the strategy rules (EMA5 / trailing stop), cut loss or day limit.','Penapis tambahan (diuji atas isyarat asal)':'Extra filters (tested on the original signals)',
+'Strategi (semua coin)':'Strategies (all coins)','Penapis tambahan':'Extra filters','Strategi':'Strategy','Untung':'Profitable','Isyarat aktif':'Active signal','Pemerhatian':'Watch',
+'Isyarat asal (4 corak, sasaran 2× ATR, cut loss 1.25× ATR)':'Original signals (4 patterns, 2× ATR target, 1.25× ATR cut loss)','Breakout 20 hari, atas EMA200 + trailing 3× ATR':'20-day breakout, above EMA200 + 3× ATR trailing','Breakout 20 hari + BTC atas EMA200 + trailing 3× ATR':'20-day breakout + BTC above EMA200 + 3× ATR trailing','Breakout 55 hari + trailing stop 3× ATR':'55-day breakout + 3× ATR trailing stop','Breakout 55 hari + BTC atas EMA200 + trailing 3× ATR':'55-day breakout + BTC above EMA200 + 3× ATR trailing','EMA20 lintas atas EMA50 (atas EMA200) + trailing 3× ATR':'EMA20 crosses above EMA50 (above EMA200) + 3× ATR trailing',
+'Keluar (untung)':'Exit (profit)','Cut loss':'Cut loss','Trailing stop kini':'Current trailing stop','Purata setiap dagangan':'Average per trade','Tempoh biasa (untung)':'Typical period (profit)','Bukti sejarah':'Historical evidence','Harga masuk':'Entry price','Harga semasa':'Current price','Isyarat hari ini':'Signal today',
+'dagangan untung dalam backtest strategi ini (semua coin, 5 tahun)':'of trades profitable in this strategy backtest (all coins, 5 years)','Isyarat Pemerhatian':'Watch signal','Tiada isyarat aktif untuk coin ini sekarang.':'No active signal for this coin right now.',
+'RSI(2) bawah 10 dalam trend menaik (lantunan pendek)':'RSI(2) below 10 in an uptrend (short bounce)','Breakout 20 hari + trailing stop 3× ATR':'20-day breakout + 3× ATR trailing stop',
+'Keluar bila harga tutup atas EMA5, atau selepas 10 hari. Cut loss 2.5× ATR.':'Exit when the price closes above EMA5, or after 10 days. Cut loss 2.5× ATR.','Trailing stop 3× ATR di bawah harga tertinggi sejak beli (naik ikut harga, tidak turun).':'Trailing stop 3× ATR below the highest price since buying (rises with price, never falls).',
+'Strategi ini terbukti positif dalam backtest walk-forward semua coin (purata pulangan kekal positif walaupun diambil had bawah julat keyakinan).':'This strategy proved positive in the walk-forward backtest across all coins (average return stays positive even at the low end of the confidence range).',
+'Strategi ini positif dalam backtest, tetapi julat keyakinannya masih termasuk sifar. Sesuai dipantau atau diuji dengan Robot Manual.':'This strategy is positive in the backtest, but its confidence range still includes zero. Suitable to watch or test with the Manual Robot.',
+'Statistik terkini strategi ini tidak positif.':'This strategy\'s latest statistics are not positive.',
 'Penapis isyarat':'Signal filters','Keadaan Bitcoin':'Bitcoin condition','Trend carta 4 jam':'4-hour chart trend','Kekuatan berbanding BTC (30 hari)':'Strength vs BTC (30 days)','Fear & Greed (seluruh pasaran)':'Fear & Greed (whole market)','Funding rate (perpetual)':'Funding rate (perpetual)','Open interest':'Open interest',
 'BTC menaik':'BTC rising','BTC mendatar':'BTC sideways','BTC menurun':'BTC falling','menaik':'rising','tidak menaik':'not rising','tiada data':'no data','Sangat takut':'Extreme fear','Takut':'Fear','Tamak':'Greed','Sangat tamak':'Extreme greed',
 '🧪 Keputusan backtest penapis':'🧪 Filter backtest results','🧪 Keputusan backtest':'🧪 Backtest results','Penapis':'Filter','Menang':'Won','Purata':'Average',
@@ -2148,6 +2207,12 @@ Object.assign(EN_EXACT,{
 'Robot Manual direset — mula semula dari $0':'Manual Robot reset — starting again from $0'
 });
 EN_RX.unshift(
+[/^Bacaan konteks pasaran\. Funding positif tinggi = ramai trader "long" \(risiko jatuh mendadak\)\. Dalam backtest, tiada penapis ini yang terbukti meningkatkan ketepatan isyarat, jadi ia tidak mengubah gred isyarat\. Lihat 🧪 Keputusan backtest\.(?: Dikira (.+) UTC\.)?$/,(m,a)=>'Market context readings. High positive funding = many traders are "long" (risk of a sharp drop). In the backtest none of these filters proved to improve signal accuracy, so they do not change the signal grade. See 🧪 Backtest results.'+(a?' Calculated '+a+' UTC.':'')],
+[/^(\d+) coin · (.+) hingga (.+) · kos ([\d.]+)% setiap dagangan\. Beli pada harga buka esok selepas isyarat; tiada data masa depan digunakan\.$/,'$1 coins · $2 to $3 · $4% cost per trade. Buy at the next day\'s open after the signal; no future data used.'],
+[/^separuh 1: (.+) · separuh 2: (.+)$/,'first half: $1 · second half: $2'],
+[/^Strategi ini diuji (\d+) kali atas semua coin \(5 tahun\); (\d+)% untung, purata ([+\-−]?[\d.]+)% setiap dagangan selepas kos$/,'Tested $1 times across all coins (5 years); $2% profitable, average $3% per trade after costs'],
+[/^Bermula (\d+) hari lalu$/,'Started $1 days ago'],[/^Harga tutup atas EMA5 \(kini ≈ (.+)\)$/,'Close above EMA5 (now ≈ $1)'],[/^Trailing stop ([\d.]+)× ATR \(naik ikut harga\)$/,'Trailing stop $1× ATR (rises with price)'],
+[/^(\d+) dagangan; (\d+) untung$/,'$1 trades; $2 profitable'],[/^biasanya (\d+)–(\d+) hari · had (\S+) hari$/,'usually $1–$2 days · limit $3 days'],
 [/^(\d+) dalam pemerhatian$/,'$1 on watch'],
 [/^(\d+) coin dengan berita positif yang kukuh( hari ini)?$/,(m,a,b)=>a+' coin'+(a==='1'?'':'s')+' with solid positive news'+(b?' today':'')],
 [/^(\d+) hari lepas · dikemas kini setiap 2 jam(?: · terakhir (.+))?$/,(m,a,b)=>'last '+a+' days · updated every 2 hours'+(b?' · latest '+b:'')],
