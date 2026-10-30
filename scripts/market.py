@@ -37,7 +37,51 @@ def prices_yf(coins):
     if out and redo:
         print(f"  cuba semula {len(redo)} coin")
         out.update(_yf_pass(redo, 5))
+    # ticker ganti (cth. TON11419-USD → TON-USD) untuk coin yang masih tiada harga
+    alt = [{**x, "yf": a} for x in coins if x["code"] not in out for a in x.get("alt", [])[:1]]
+    if alt:
+        print(f"  cuba ticker ganti untuk {len(alt)} coin: {[a['yf'] for a in alt]}")
+        out.update(_yf_pass(alt, 5))
     return out
+
+
+def fill_from_hourly(coins, px, today_utc):
+    """Yahoo kadang-kadang lewat menerbitkan bar harian crypto terkini. Bina bar harian yang tertinggal
+    (hari UTC yang sudah lengkap, sebelum hari ini) daripada data sejam. Pulangkan bilangan bar diisi."""
+    import yfinance as yf
+
+    filled = 0
+    tick = {x["code"]: x["yf"] for x in coins if x["code"] in px}
+    try:
+        df = yf.download(list(tick.values()), period="5d", interval="1h", group_by="ticker", auto_adjust=True,
+                         threads=True, progress=False)
+    except Exception as e:
+        print("  ! data sejam gagal:", e)
+        return 0
+    for c, t in tick.items():
+        try:
+            sub = (df[t] if len(tick) > 1 else df).dropna(subset=["Close"])
+        except Exception:
+            continue
+        if sub.empty:
+            continue
+        idx = sub.index.tz_convert("UTC") if sub.index.tz is not None else sub.index
+        days = {}
+        for ix, r in zip(idx, sub.itertuples()):
+            days.setdefault(ix.strftime("%Y-%m-%d"), []).append((ix.hour, r))
+        last = px[c][-1][0]
+        for d in sorted(days):
+            if d <= last or d >= today_utc:
+                continue
+            bars = sorted(days[d], key=lambda z: z[0])
+            if len(bars) < 20:   # hari tidak lengkap dalam data sejam — jangan reka bar
+                continue
+            rs = [b[1] for b in bars]
+            px[c].append([d, rs[0].Open, max(b.High for b in rs), min(b.Low for b in rs), rs[-1].Close,
+                          sum(0 if math.isnan(b.Volume) else b.Volume for b in rs)])
+            last = d
+            filled += 1
+    return filled
 
 
 def _yf_pass(coins, size):
@@ -101,6 +145,14 @@ def main():
     today_utc = datetime.now(timezone.utc).date().isoformat()
     px = {c: [r for r in rows if r[0] < today_utc] for c, rows in px.items()}
     px = {c: rows for c, rows in px.items() if len(rows) >= 5}
+    raw_last = px["BTC"][-1][0] if "BTC" in px else None
+    try:
+        n_fill = fill_from_hourly(coins, px, today_utc)
+        if n_fill:
+            print(f"  ✓ {n_fill} bar harian yang tertinggal diisi daripada data sejam")
+    except Exception as e:
+        n_fill = 0
+        print("  ! isi bar harian gagal:", e)
     if len(px) < max(3, len(coins) * 0.5):
         raise SystemExit(f"GAGAL: hanya {len(px)} coin ada harga. Data lama tidak diganti.")
 
@@ -186,7 +238,7 @@ def main():
         print("! Eksperimen cara keluar gagal:", e)
     meta = {
         "generated": datetime.now(timezone.utc).isoformat(timespec="minutes"),
-        "asof": asof, "provider": PROVIDER, "currency": "USD",
+        "asof": asof, "provider": PROVIDER, "currency": "USD", "rawLast": raw_last, "hourFill": n_fill,
         "count": len(stocks), "priced": len(px),
         "bt": {"h": BT.H, "tgt": BT.TGT_ATR, "stp": BT.STP_ATR, "fee": BT.FEE},
         "setups": {k: {"name": BT.SETUPS[k], "n": g["n"], "p": round(prior[k] * 100), "md": g["md"],
