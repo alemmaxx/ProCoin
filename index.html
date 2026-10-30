@@ -1148,8 +1148,8 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
   if(a.sig){const L=[];Object.entries(M.stocks).forEach(([c,v])=>{if(!v.op||v.liq===0||!v.c)return;let best=null;
       v.op.forEach(o=>{const SG=stratOf(o.k);if((o.ago||0)!==0||!(o.ev>0)||!(netEV(o.ev)>0)||!o.en||!SG||SG.grade!=='A'||filterFails(c).length)return;if(!best||o.ev>best.e)best={e:o.ev,o};});
       if(best)L.push({code:c,name:v.n,c:v.c,o:best.o,e:best.e});});
-    L.sort((x,y)=>y.e-x.e).forEach(x=>{const id=`auto-${x.code}-${asof}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
-      add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(x.c),stake:amt,tg:r6(x.o.tg),sl:r6(x.o.sl),st:x.o.st,atr:x.o.atr,hz:stratOf(x.o.k).max||null,md:x.o.md?Math.round(x.o.md):null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});}
+    L.sort((x,y)=>y.e-x.e).forEach(x=>{const id=`auto-${x.code}-${asof}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;const ep=nowPx(x.code)||x.c;
+      add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(ep),stake:amt,tg:r6(x.o.tg),sl:r6(x.o.sl),st:x.o.st,atr:x.o.atr,hz:stratOf(x.o.k).max||null,md:x.o.md?Math.round(x.o.md):null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});}
   if(a.news)potNews().forEach(x=>{const m=mk(x.code);if(!m||m.liq===0||!m.c)return;const id=`auto-${x.code}-n${x.n.d}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
     const c=nowPx(x.code)||m.c,at=S.cache[x.code]&&S.cache[x.code].atr,sp=at?Math.min(Math.max(1.25*at/c,.02),.25):.05;
     add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});
@@ -1251,13 +1251,14 @@ function manRow(p){const nm=shortName(p.name||nameOf(p.code));const m=mk(p.code)
 function openManDetail(id){const p=(S.manual||[]).find(x=>x.id===id);if(!p)return;
   const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
   d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true"><div><div class="shd-top"><div class="shd-name"><h2 style="margin:0">${p.src==='A'?'🤖':'✍️'} ${esc(shortName(p.name||nameOf(p.code)))}</h2><div class="code">${esc(p.code)} · ${p.src==='A'?'Robot Auto':'Robot Manual'}</div></div><button class="xbtn" id="helpX" aria-label="Tutup">✕</button></div></div>
-    ${manFull(p)}<button class="btn sec" style="width:100%;margin-top:12px" id="mdView">Lihat analisa coin ↗</button></div>`;
+    ${manFull(p)}${p.closed?'':`<button class="btn red" style="width:100%;margin-top:12px" id="mdClose">⏹ Tutup sekarang pada harga kini</button>`}<button class="btn sec" style="width:100%;margin-top:8px" id="mdView">Lihat analisa coin ↗</button></div>`;
   document.body.appendChild(d);const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};
   d.onclick=e=>{const mx=e.target.closest('[data-mx]'),md=e.target.closest('[data-md]');
     if(mx){close();openManual(mx.dataset.mx);return;}
     if(md){manDelete(md.dataset.md);close();rRobot();toast('Dipadam dari senarai');return;}
     if(e.target===d)close();};
-  $('#helpX').onclick=close;$('#mdView').onclick=()=>{close();stockSheet(p.code,nameOf(p.code));};}
+  $('#helpX').onclick=close;$('#mdView').onclick=()=>{close();stockSheet(p.code,nameOf(p.code));};
+  const mc=$('#mdClose');if(mc)mc.onclick=()=>confirm2(mc,'Tekan lagi untuk tutup',()=>{const now=nowPx(p.code);if(!now)return toast('Harga kini belum tersedia');p.closed={res:'M',exit:now,end:today(),at:new Date().toISOString(),days:tdBetween(p.d,today())};save();close();rRobot();const u=manPnl(p,now);toast('⏹ Ditutup pada '+px(now)+' · '+rmS(u));});}
 function manFull(p){const nm=shortName(p.name||nameOf(p.code));
   if(p.closed){const C=p.closed,r=RES3[C.res];const u=manPnl(p,C.exit),xp=u/p.stake*100;
     const m=mk(p.code),now=nowPx(p.code),since=now?(now/C.exit-1)*100:null,sc=since==null||Math.abs(since)<0.05?'':since>0?'up':'dn';
@@ -1270,9 +1271,9 @@ function manFull(p){const nm=shortName(p.name||nameOf(p.code));
   const cell=(l,v,c='',w='')=>`<div${w?' class="mw"':''}><span>${l}</span><b class="${c}">${v}</b></div>`;
   return `<div class="mrow" data-code="${esc(p.code)}" role="button">
     <div class="mhd"><span><b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span></span><span class="mnow"><small>Harga kini</small><b class="${pc}">${now?px(now):'-'}</b>${u==null?'':`<em class="${u>=0?'up':'dn'}">${rmS(u)} (${pct>0?'+':''}${pct.toFixed(1)}%)</em>`}</span></div>
-    <div class="mgrid">${cell('Harga masuk',px(p.en))}${p.qty?cell('Unit · kos+yuran',p.qty+' · '+rm(p.stake)):cell('Nilai maya',rm(p.stake))}${p.st==='rsi2'?cell('Keluar','Tutup atas EMA5','up'):p.st==='brk20'?cell('Trailing stop kini',px(p.trail||p.sl),'dn'):cell('Sasaran',px(p.tg)+(p.tp?` (+${p.tp}%)`:''),'up')}${p.st==='brk20'?cell('Stop awal',px(p.sl),'dn'):cell('Cut loss',px(p.sl),'dn')}${cell('Kos pergi-balik',((p.fs!=null?p.fs:BTH().fee/2)*200).toFixed(2)+'%'+(p.cl?` · ${esc(p.cl)}`:''))}
+    <div class="mgrid">${cell('Harga masuk',px(p.en))}${p.qty?cell('Unit · kos+yuran',p.qty+' · '+rm(p.stake)):cell('Nilai maya',rm(p.stake))}${p.st==='rsi2'?cell('Keluar automatik',(()=>{const b=S.cache[p.code]&&S.cache[p.code].bars;if(!b||b.length<6)return 'Harga tutup harian > EMA5';const e=ema(b.map(x=>x.c),5);return 'Harga tutup harian > '+px(e[e.length-1]);})(),'up'):p.st==='brk20'?cell('Trailing stop kini',px(p.trail||p.sl),'dn'):cell('Sasaran',px(p.tg)+(p.tp?` (+${p.tp}%)`:''),'up')}${p.st==='brk20'?cell('Stop awal',px(p.sl),'dn'):cell('Cut loss',px(p.sl),'dn')}${cell('Kos pergi-balik',((p.fs!=null?p.fs:BTH().fee/2)*200).toFixed(2)+'%'+(p.cl?` · ${esc(p.cl)}`:''))}
       ${cell('Masa beli',manStartTxt(p))}${p.hz?cell('Tutup automatik',fmtD(addTradingDays(p.d,p.inc?p.hz-1:p.hz))):cell('Tamat tempoh biasa',p.md?fmtD(addTradingDays(p.d,p.inc?p.md-1:p.md)):'-')}</div>
-    <div class="mft">${statusHTML(p.code,nameOf(p.code),true).replace(/<span class="s-warn">(✍️|🤖)[^]*?<\/span>/g,'').replace(/ · bermula [^<]*? hingga [^<]*?(?= <button)/g,'')}<span class="row" style="gap:6px;flex:none"><button class="btn sm sec" data-mx="${esc(p.code)}">Urus</button><button class="mdel" data-md="${esc(p.id)}" aria-label="Padam">🗑</button></span></div></div>`;}
+    <div class="mft">${p.st?'<span></span>':statusHTML(p.code,nameOf(p.code),true).replace(/<span class="s-warn">(✍️|🤖)[^]*?<\/span>/g,'').replace(/ · bermula [^<]*? hingga [^<]*?(?= <button)/g,'')}<span class="row" style="gap:6px;flex:none"><button class="btn sm sec" data-mx="${esc(p.code)}">Urus</button><button class="mdel" data-md="${esc(p.id)}" aria-label="Padam">🗑</button></span></div></div>`;}
 function maSplitHTML(M){const g=k=>M.filter(p=>(p.src==='A')===(k==='A'));const A=g('A'),Mm=g('M');if(!A.length||!Mm.length)return '';
   const st=L=>{const cl=L.filter(p=>p.closed),w=cl.filter(p=>p.closed.res==='W').length;const pl=L.reduce((t,p)=>{if(p.closed)return t+manPnl(p,p.closed.exit);const n=nowPx(p.code);return t+(n?manPnl(p,n):0);},0);return {n:L.length,acc:cl.length?Math.round(w/cl.length*100)+'%':'-',pl};};
   const a=st(A),m=st(Mm);
@@ -1548,7 +1549,7 @@ const EN_EXACT={
 'Exchange: taker 0.25–0.50% ikut volum 30 hari. Instant Buy/Sell 2%.':'Exchange: taker 0.25–0.50% depending on 30-day volume. Instant Buy/Sell 2%.',
 'Masukkan yuran setiap transaksi (beli ATAU jual) ikut skrin yuran platform anda.':"Enter the fee per transaction (buy OR sell) from your platform's fee page.",
 'setiap dagangan.':'per trade.','setiap dagangan. Robot Auto tidak akan masuk kerana kos melebihi kelebihan strategi. Kurangkan kos (contohnya order had / maker) atau pilih platform lebih murah.':"per trade. Auto Robot will not enter because costs exceed the strategy's edge. Lower your costs (e.g. limit / maker orders) or pick a cheaper platform.",
-'Selepas kos platform anda':'After your platform costs','Keluar':'Exit','Tutup atas EMA5':'Close above EMA5','Trailing stop kini':'Current trailing stop','Stop awal':'Initial stop','Kos pergi-balik':'Round-trip cost',
+'Selepas kos platform anda':'After your platform costs','⏹ Tutup sekarang pada harga kini':'⏹ Close now at current price','Tekan lagi untuk tutup':'Tap again to close','Keluar automatik':'Auto exit','Harga tutup harian > EMA5':'Daily close > EMA5','Keluar':'Exit','Tutup atas EMA5':'Close above EMA5','Trailing stop kini':'Current trailing stop','Stop awal':'Initial stop','Kos pergi-balik':'Round-trip cost',
 'Skor teknikal (1 jam)':'Technical score (1 hour)','Bacaan teknikal (carta 1 jam)':'Technical readings (1-hour chart)',
 'Indicator di atas dikira dari carta yang dipilih (asal: 1 jam). Isyarat strategi (RSI 2, Breakout 20) tetap guna harga tutup harian. Rujukan sahaja, bukan cadangan beli/jual.':'The indicators above are calculated from the selected chart (default: 1 hour). Strategy signals (RSI 2, Breakout 20) still use the daily close. Reference only, not a buy/sell recommendation.',
 
@@ -2085,6 +2086,7 @@ EN_RX.unshift(
 [/^(\d+)\/100 ⓘ$/,'$1/100 ⓘ'],
 [/^✓ Kos (.+) \(([\d.]+)% pergi-balik\) disimpan$/,(m,a,b)=>`✓ Cost ${trCost(a)} (${b}% round trip) saved`],
 [/^💸 (.+) · ([\d.]+)% pergi-balik$/,(m,a,b)=>`💸 ${trCost(a)} · ${b}% round trip`],
+[/^Harga tutup harian > (\S+)$/,'Daily close > $1'],[/^⏹ Ditutup pada (\S+) · (\S+)$/,'⏹ Closed at $1 · $2'],
 [/^Carta 1 jam · (\S+) pada (.+) \(terkini\)$/,(m,b,c)=>`1-hour chart · ${b} at ${trText(c)} (latest)`],
 [/^Strategi Isyarat aktif \(RSI 2\): purata ([+\-−]?[\d.]+)% dalam backtest \(kos ([\d.]+)%\)\. Dengan kos anda ([\d.]+)%, jangkaan purata$/,'Active-signal strategy (RSI 2): average $1% in the backtest ($2% cost). With your $3% cost, the expected average is'],
 [/^backtest, kos ([\d.]+)%$/,'backtest, $1% cost'],
