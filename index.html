@@ -1291,7 +1291,7 @@ function openManual(code){
 function mtag(p){return p.src==='A'?'<span class="mtag a">A</span>':'<span class="mtag m">M</span>';}
 function manRow(p){const nm=shortName(p.name||nameOf(p.code));const m=mk(p.code),now=nowPx(p.code);
   if(p.closed){const C=p.closed,r=RES3[C.res],u=manPnl(p,C.exit),xp=u/p.stake*100;
-    return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span></span><span class="mnow"><small>Harga kini</small><b>${now?px(now):'-'}</b><em class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</em></span></div></div>`;}
+    return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span> <small class="muted">🔒 ${C.at?fmtDT(C.at):fmtD(C.end)}</small></span><span class="mnow"><small>Harga tutup</small><b>${px(C.exit)}</b><em class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</em></span></div></div>`;}
   const u=now?manPnl(p,now):null;let pct=u!=null?u/p.stake*100:null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
   return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span>${p.src==='A'&&p.why?`<br><small class="muted">${{sig:'🟢 Isyarat Kuat',news:'📰 Berita'}[p.why]||''}</small>`:''}</span><span class="mnow"><small>Harga kini</small><b class="${pc}">${now?px(now):'-'}</b>${u==null?'':`<em class="${u>=0?'up':'dn'}">${rmS(u)} (${pct>0?'+':''}${pct.toFixed(1)}%)</em>`}</span></div></div>`;}
 function openManDetail(id){const p=(S.manual||[]).find(x=>x.id===id);if(!p)return;
@@ -1310,8 +1310,8 @@ function manFull(p){const nm=shortName(p.name||nameOf(p.code));
     const m=mk(p.code),now=nowPx(p.code),since=now?(now/C.exit-1)*100:null,sc=since==null||Math.abs(since)<0.05?'':since>0?'up':'dn';
     const cell=(l,v,c='')=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`;
     return `<div class="mrow" data-code="${esc(p.code)}" role="button">
-    <div class="mhd"><span><b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span></span><span class="mnow"><small>Harga kini</small><b class="${sc}">${now?px(now):'-'}</b>${since==null?'':`<em class="${sc}">${since>0?'+':''}${since.toFixed(1)}% sejak ditutup</em>`}</span></div>
-    <div class="mgrid">${cell('Harga masuk',px(p.en))}${cell('Harga tutup',px(C.exit),xp>=0?'up':'dn')}${cell('Masa beli',manStartTxt(p))}${cell('Masa tutup',`${C.at?fmtDT(C.at):fmtD(C.end<p.d?p.d:C.end)} (${Math.max(0,C.days)} hari)`)}<div class="mw"><span>Keputusan</span><b class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</b></div></div>
+    <div class="mhd"><span><b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span></span><span class="mnow"><small>Harga tutup 🔒</small><b>${px(C.exit)}</b><em class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</em></span></div>
+    <div class="mgrid">${cell('Harga masuk',px(p.en))}${cell('Harga tutup',px(C.exit),xp>=0?'up':'dn')}${cell('Masa beli',manStartTxt(p))}${cell('Masa tutup',`${C.at?fmtDT(C.at):fmtD(C.end<p.d?p.d:C.end)} (${Math.max(0,C.days)} hari)`)}<div class="mw"><span>Keputusan (tetap)</span><b class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</b></div>${now?`<div class="mw"><span>Harga kini (untuk rujukan sahaja)</span><b class="${sc}">${px(now)}${since==null?'':` · ${since>0?'+':''}${since.toFixed(1)}% sejak ditutup`}</b></div>`:''}</div>
     <div class="mft"><span class="muted" style="font-size:12px">${rm(p.stake)} nilai maya · kos ${((p.fs!=null?p.fs:BTH().fee/2)*200).toFixed(2)}% pergi-balik${p.cl?` (${esc(p.cl)})`:''}</span><button class="mdel" data-md="${esc(p.id)}" aria-label="Padam">🗑</button></div></div>`;}
   const m=mk(p.code),now=nowPx(p.code),u=now?manPnl(p,now):null,H=BTH().h;let pct=u!=null?u/p.stake*100:null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
   const cell=(l,v,c='',w='')=>`<div${w?' class="mw"':''}><span>${l}</span><b class="${c}">${v}</b></div>`;
@@ -1589,6 +1589,7 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'Harga tutup 🔒':'Close price 🔒','Keputusan (tetap)':'Result (locked)','Harga kini (untuk rujukan sahaja)':'Current price (reference only)',
 'EMA20 jatuh bawah EMA50 (ikut trend)':'EMA20 falls below EMA50 (follows the trend)','Tiada, keluar ikut trend':'None, exits with the trend','EMA20 jatuh bawah EMA50':'EMA20 falls below EMA50','Tiada (ikut trend)':'None (follows trend)','EMA20 bawah EMA50':'EMA20 below EMA50',
 'Jatuh mendadak dalam trend naik (lantunan)':'Sharp drop in an uptrend (bounce)','Trend: EMA20 lintas atas EMA50 (atas EMA200)':'Trend: EMA20 crosses above EMA50 (above EMA200)',
 'Masuk bila coin jatuh lebih 15% dalam 3 hari tetapi masih atas EMA200. Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3× ATR.':'Enters when a coin falls more than 15% in 3 days but is still above EMA200. Exits when the close is above EMA10, or after 20 days. Cut loss 3× ATR.',
@@ -2175,6 +2176,7 @@ EN_RX.unshift(
 [/^(.+)Coin ini ada isyarat Trend EMA20×EMA50: robot pegang selagi trend kekal dan tutup bila EMA20 jatuh bawah EMA50\. Anda boleh tutup sendiri bila-bila masa\.$/,(m,a)=>`${trText(a.trim())} This coin has an EMA20×EMA50 trend signal: the robot holds while the trend lasts and closes when EMA20 falls below EMA50. You can close it yourself any time.`],
 [/^Ujian maya tanpa wang sebenar, dengan kos (.+) \(([\d.]+)% pergi-balik\)\.$/,(m,a,b)=>`Virtual test with no real money, with ${trCost(a)} costs (${b}% round trip).`],
 [/^Sudah melepasi paras keluar EMA10 (\S+) \(isyarat (.+)\)$/,(m,a,b)=>`Already above EMA10 exit level ${a} (signal ${trText(b)})`],
+[/^(\S+) · ([+\-−]?[\d.]+)% sejak ditutup$/,'$1 · $2% since closed'],[/^🔒 (.+)$/,(m,a)=>'🔒 '+trText(a)],
 [/^Carta 1 jam · (\S+) pada (.+) \(terkini\)$/,(m,b,c)=>`1-hour chart · ${b} at ${trText(c)} (latest)`],
 [/^Strategi Isyarat aktif \(RSI 2\): purata ([+\-−]?[\d.]+)% dalam backtest \(kos ([\d.]+)%\)\. Dengan kos anda ([\d.]+)%, jangkaan purata$/,'Active-signal strategy (RSI 2): average $1% in the backtest ($2% cost). With your $3% cost, the expected average is'],
 [/^backtest, kos ([\d.]+)%$/,'backtest, $1% cost'],
