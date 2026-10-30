@@ -154,6 +154,32 @@ STRATS = {
 }
 
 
+# --- varian "jatuh mendadak" (lebih kerap): saiz jatuh × tempoh hari × penapis trend. Keluar tetap: tutup atas EMA10, cut loss 3× ATR, had 20 hari.
+def _drop(pct, n, flt):
+    def en(x, t):
+        if t < n or x.c[t] / x.c[t - n] - 1 >= -pct:
+            return False
+        if flt == "e200":
+            return x.e200[t] is not None and x.c[t] > x.e200[t]
+        if flt == "e100":
+            return x.e100[t] is not None and x.c[t] > x.e100[t]
+        if flt == "btc":
+            return x.bu[t]
+        if flt == "e200b":
+            return x.e200[t] is not None and x.c[t] > x.e200[t] and x.bu[t]
+        return True
+    return en
+
+
+ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}
+for _p in (0.08, 0.10, 0.12, 0.15, 0.20):
+    for _n in (2, 3, 5):
+        for _f in ("e200", "e100", "btc", "e200b", "none"):
+            k = f"dr{int(_p * 100)}_{_n}_{_f}"
+            STRATS[k] = (f"Jatuh >{int(_p * 100)}% dalam {_n} hari" + {"e200": " atas EMA200", "e100": " atas EMA100", "btc": " + BTC naik",
+                         "e200b": " atas EMA200 + BTC naik", "none": " (tanpa penapis)"}[_f] + ", keluar atas EMA10",
+                         _drop(_p, _n, _f), lambda x, j, e: x.c[j] > x.e10[j], (3.0, False), 20)
+
 def sim(x, entry, exit_fn, stop, max_days, start_t):
     """Satu posisi pada satu masa. Pulangkan dagangan: [hari isyarat, hari masuk, hari keluar, pulangan kasar %, terbuka?]."""
     n, tr, t = len(x.c), [], max(start_t, 201)
