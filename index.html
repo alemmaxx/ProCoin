@@ -299,6 +299,11 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 .plink{display:block;text-align:center;margin-top:10px;font-size:13px;color:var(--muted);text-decoration:underline}
 .capbox{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}.capg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.capg>div{background:var(--card);border-radius:10px;padding:8px 10px}.capg small{display:block;color:var(--muted);font-size:12px}
 .auopt.off{opacity:.45;pointer-events:none}
+.capd{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}.capd0{display:flex;align-items:center;gap:12px}.capd0>span:first-child{font-size:24px}.capd0>span:nth-child(2){flex:1;display:flex;flex-direction:column}.capd0 small{color:var(--muted);font-size:12.5px}
+.capv{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:10px 0 8px}.capv b{font-size:26px}.capv>span{font-weight:700;font-size:15px}.capv small{flex-basis:100%;color:var(--muted);font-size:12px}
+.capbar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden}.capbar span{display:block;height:100%;background:var(--gold);border-radius:6px}.capbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:4px 0 10px}
+.capg3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.capg3>div{background:var(--card2);border-radius:10px;padding:7px 8px;min-width:0}.capg3 small{display:block;color:var(--muted);font-size:10.5px;line-height:1.25}.capg3 b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.capn{display:block;margin-top:8px;font-size:11.5px}
 .mrow{padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer}.mrow:last-child{border-bottom:0}
 .mhd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
 .mrow.mc{padding:12px 0}.help-p .mrow{border-bottom:0;cursor:default}
@@ -517,7 +522,7 @@ async function getBars(code,force){
 let LIVE=null;
 function livePx(code){const L=LIVE;if(!L||!L.p||!S.market)return null;if(!(L.d>S.market.meta.asof))return null;const x=L.p[code];return x?{p:x[0],ch:x[1],hi:x[2],lo:x[3],t:L.t}:null;}
 function nowPx(code){const l=livePx(code);if(l)return l.p;const m=mk(code);return m?m.c:null;}
-function mktOpen(){return true;} /* crypto berdagang 24/7 */
+
 /* Harga masa nyata: terus dari CoinGecko (API awam, dalam telefon pengguna). Sandaran: live.json robot GitHub (lewat ±15 minit). */
 const CG_FALLBACK={BTC:'bitcoin',ETH:'ethereum',XRP:'ripple',BNB:'binancecoin',SOL:'solana',TRX:'tron',DOGE:'dogecoin',ADA:'cardano',LINK:'chainlink',BCH:'bitcoin-cash',XLM:'stellar',AVAX:'avalanche-2',LTC:'litecoin',HBAR:'hedera-hashgraph',SUI:'sui',DOT:'polkadot',UNI:'uniswap',NEAR:'near',AAVE:'aave',ETC:'ethereum-classic',SHIB:'shiba-inu'};
 let ROBOT_LIVE=null,LIVE_SRC='';
@@ -710,7 +715,7 @@ function opsFor(code){const m=mk(code);if(!m||!m.op)return [];return m.op.filter
 function bestOp(code){const o=opsFor(code);return o.length?o[0]:null;}
 function breakeven(op){const tp=op.tg/op.en-1,sp=1-op.sl/op.en;return (sp+BTH().fee)/(tp+sp);}
 function probBar(p,be){return `<div class="pbar"><span style="width:${p}%"></span><i style="left:${(be*100).toFixed(0)}%" title="Titik pulang modal"></i></div>`;}
-function opCard(code,op,m){if(op.st)return stratCard(code,op,m);return opCard0(code,op,m);}
+function opCard(code,op,m){return stratCard(code,op,m);}
 function stratCard(code,op,m){const RS=rateSignal({...op,code});const SG=stratOf(op.k)||{};const sp=(1-op.sl/op.en)*100;const now=nowPx(code);
   const exitTxt=op.st==='rsi2'?`Harga tutup atas EMA5 (kini ≈ ${px(op.tg)})`:`Trailing stop ${SG.kATR||3}× ATR (naik ikut harga)`;
   return `<div class="opc"><div class="row between"><div><b>${esc(setupName(op.k))}</b><div class="muted">${op.ago?`Bermula ${op.ago} hari lalu`:'Isyarat hari ini'}</div></div></div>
@@ -725,24 +730,6 @@ function stratCard(code,op,m){const RS=rateSignal({...op,code});const SG=stratOf
     <div><span>Tempoh biasa (untung)</span><b>${op.md!=null?Math.round(op.md)+' hari':'-'}</b><small>${op.d25!=null?`biasanya ${op.d25}–${op.d75} hari · had ${SG.max||'-'} hari`:''}</small></div>
     <div><span>Bukti sejarah</span><b>${op.n} dagangan; ${op.w} untung</b><small>keyakinan ${op.cf||'-'}</small></div>
    </div><p class="muted" style="font-size:12px;margin:8px 0 0">${esc(op.rule||SG.rule||'')}</p></div>`;}
-function opCard0(code,op,m){
-  const be=breakeven(op);const tp=(op.tg/op.en-1)*100,sp=(1-op.sl/op.en)*100;const H=BTH().h;
-  const short=(op.md||0)<5;const edge=op.p/100-be;
-  const RS=rateSignal({...op,code});
-  return `<div class="opc"><div class="row between"><div><b>${esc(setupName(op.k))}</b><div class="muted">${op.ago?`Isyarat ${op.ago} hari lalu`:'Isyarat hari ini'}${short?' · jangka pendek':''}</div></div></div>
-   ${weakNote(code,op.k)?`<div class="wnote" style="margin-top:8px">ℹ️ ${weakNote(code,op.k)}</div>`:''}
-   <div class="opp"><span class="big">${op.p}%</span><span class="muted">kali harga sampai paras atas sebelum paras bawah, dalam sejarah coin ini</span></div>
-   <div style="margin:0 0 8px">${rateHTML({...op,code})}</div>
-   ${probBar(op.p,be)}<div class="muted" style="font-size:12px">Garis putih = paras neutral ${(be*100).toFixed(0)}%, iaitu kadar yang dijangka jika pergerakan harga rawak. Peratus melepasi garis bermakna isyarat ini pernah lebih kuat daripada rawak.</div>
-   <div class="plan">
-    <div><span>Harga semasa</span><b>${px(op.en)}</b></div>
-    <div><span>Paras atas (+2× ATR)</span><b class="up">${px(op.tg)} <small>+${tp.toFixed(1)}%</small></b></div>
-    <div><span>Paras bawah (−1.25× ATR)</span><b class="dn">${px(op.sl)} <small>−${sp.toFixed(1)}%</small></b></div>
-    <div><span>Tempoh biasa ke paras atas</span><b>${op.md!=null?`${Math.round(op.md)} hari`:'-'}</b><small>${op.d25!=null?`biasanya ${op.d25}–${op.d75} hari · sekitar ${fmtD(addTradingDays(m.d,Math.round(op.md)))}`:''}</small></div>
-    <div><span>Tempoh ujian</span><b>${H} hari</b><small>isyarat tamat jika tiada paras dicapai menjelang ${fmtD(addTradingDays(m.d,H))}</small></div>
-    <div><span>Bukti sejarah</span><b>Muncul ${op.n} kali; ${op.w} kali sampai sasaran dahulu</b><small>keyakinan ${op.cf}${op.ev!=null?` · purata pergerakan ${op.ev>0?'+':''}${op.ev}% setiap isyarat`:''}</small></div>
-   </div></div>`;
-}
 function oppSection(code,blocked){
   const m=mk(code);if(!m)return '';
   const ops=opsFor(code);
@@ -891,19 +878,7 @@ function rateSignal(x){
 }
 function rateHTML(x){const R=rateSignal(x);
   return `<span class="rate"><span class="badge ${R.cls}">${R.lbl}</span><span class="muted">${R.txt}</span>${R.bits.map(b=>`<span class="rbit">${esc(b)}</span>`).join('')}</span>`;}
-function isChamp(){return false;}
 /* Status data: tarikh harga tutup & bila kemas kini seterusnya — supaya pengguna faham kenapa tiada isyarat */
-function nextTradingDay(d){return addTradingDays(d,1);}
-function dataStatusHTML(){const asof=S.market.meta.asof,now=new Date(),t=today(),hm=now.getHours()*60+now.getMinutes();
-  /* bar harian (UTC) semalam tutup 8.00 pagi MYT; robot berjalan ~8.30 pagi */
-  const lastTD=subTradingDays(t,hm>=540?1:2);
-  let nxt,warn=false;
-  if(asof>=lastTD)nxt=hm<540?'hari ini, sekitar 8.30 pagi':'esok, sekitar 8.30 pagi';
-  else if(hm>=510&&hm<660)nxt='sebentar lagi (robot sedang berjalan)';
-  else{nxt='data lewat — robot akan cuba semula (paling lewat 11.30 pagi)';warn=true;}
-  const lag=asof<lastTD?tdBetween(asof,lastTD):0;
-  const n=topSignals(60).length,e=fmtD(entryDate(asof));
-  return `${lag>=2?`<div class="alert a-red" style="margin:10px var(--gut) 0">⚠️ Data harga lewat ${lag} hari. Isyarat mungkin tidak tepat sehingga data dikemas kini.</div>`:''}<div class="dstat${warn?' warn':''}"><span>📅 Data harga tutup ${fmtD(asof)} (8 pagi) · ${n?`${n} isyarat untuk ${e}`:`tiada Isyarat Kuat untuk ${e}`}${(o=>o?` · ${o} dalam pemerhatian`:'')(topSignals(60,'obs').length)}</span><span>🔄 Kemas kini seterusnya: ${nxt}</span></div>`;}
 /* ===== PASARAN CRYPTO (ikut Bitcoin) ===== */
 function klciWord(u){return u===1?'Menaik':u===-1?'Menurun':'Mendatar';}
 function klciHTML(){const K=S.market&&S.market.meta&&S.market.meta.klci;if(!K)return '';
@@ -983,11 +958,11 @@ const HOW=[
   'Robot berita berjalan setiap 2 jam dan menyemak berita terkini setiap coin (Google News). Setiap tajuk diberi tanda nada: ▲ positif, ▼ negatif, • neutral, berdasarkan kata kunci ringkas. Berita Berpotensi = coin yang ada berita bernada positif hari ini.',
   'Crypto news','The news robot runs every 2 hours and checks the latest news for every coin (Google News). Each headline gets a tone mark: ▲ positive, ▼ negative, • neutral, based on simple keywords. Potential news = coins with positive-toned news today.'],
  ['🤖','Robot Manual & Auto',
-  'M = ujian yang anda mulakan sendiri (✍️ Manual). A = Robot Auto masuk sendiri selepas data pagi (isyarat) atau pada larian berita. Robot semak setiap kali app dibuka dan tutup bila sampai sasaran / ambil untung, kena cut loss, atau tempoh tamat. Semua nilai ialah nilai maya (latihan), bukan wang sebenar.',
-  'Manual & Auto Robot','M = tests you start yourself (✍️ Manual). A = Auto Robot enters by itself after the morning data (signals) or on the news runs. The robot checks every time the app opens and closes at the target / take profit, the cut loss, or when the period ends. All values are virtual (practice), not real money.'],
+  'M = ujian yang anda mulakan sendiri (✍️ Manual). A = Robot Auto masuk sendiri selepas data pagi (isyarat) atau pada larian berita. Robot semak harga tutup harian setiap kali app dibuka dan tutup ikut peraturan strategi: RSI 2 keluar bila harga tutup harian melepasi EMA5 (atau 10 hari), Breakout 20 keluar bila kena trailing stop; kedua-duanya ada cut loss. Anda juga boleh tutup sendiri bila-bila masa (butang ⏹ Tutup sekarang). Semua nilai ialah nilai maya (latihan), bukan wang sebenar.',
+  'Manual & Auto Robot','M = tests you start yourself (✍️ Manual). A = Auto Robot enters by itself after the morning data (signals) or on the news runs. The robot checks the daily close every time the app opens and closes by the strategy rules: RSI 2 exits when the daily close is above EMA5 (or after 10 days), Breakout 20 exits at its trailing stop; both have a cut loss. You can also close it yourself any time (⏹ Close now button). All values are virtual (practice), not real money.'],
  ['💰','Modal & yuran',
-  'Bila modal pelaburan ditetapkan, robot bahagi modal kepada 5 bahagian (≈20% setiap coin) dan hanya masuk jika baki cukup. Bila coin ditutup, duit kembali ke baki termasuk untung atau rugi. Yuran dagangan pergi-balik 0.2% ditolak daripada setiap pulangan.',
-  'Capital & fees','When investment capital is set, the robot splits it into 5 parts (≈20% per coin) and only enters if the balance is enough. When a coin closes, the money returns to the balance including profit or loss. A 0.2% round-trip trading fee is deducted from every return.'],
+  'Bila modal pelaburan ditetapkan, robot bahagi modal kepada 5 bahagian (≈20% setiap coin) dan hanya masuk jika baki cukup. Bila coin ditutup, duit kembali ke baki termasuk untung atau rugi. Kos dagangan sebenar (yuran beli + jual + spread) ikut platform yang anda pilih dalam Robot Auto ditolak daripada setiap pulangan. Backtest strategi guna kos 0.2%.',
+  'Capital & fees','When investment capital is set, the robot splits it into 5 parts (≈20% per coin) and only enters if the balance is enough. When a coin closes, the money returns to the balance including profit or loss. Real trading costs (buy + sell fee + spread) for the platform you choose in Auto Robot are deducted from every return. The strategy backtest uses a 0.2% cost.'],
  ['🔔','Notifikasi',
   'Amaran (loceng 🔔) dikira dalam telefon anda setiap kali app dibuka: isyarat aktif, Berita Berpotensi, berita negatif coin anda, Robot, dan amaran harga. Hidupkan notifikasi di Tetapan supaya amaran muncul sebagai notifikasi telefon.',
   'Notifications','Alerts (bell 🔔) are worked out on your phone every time the app opens: active signals, Potential news, negative news on your coins, Robot and price alerts. Turn on notifications in Settings so alerts appear as phone notifications.'],
@@ -1007,7 +982,6 @@ function howHTML(){const en=S.settings.lang==='en';return HOW.map(([ic,qb,ab,qe,
 function openHow(){openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">📘 ${S.settings.lang==='en'?'How the app works':'Cara app berjalan'}</h2><button class="xbtn" onclick="closeSheet()" aria-label="Tutup">✕</button></div><div class="notr" style="margin-top:8px">${howHTML()}</div>`);}
 /* ===== SENARAI COIN ===== */
 function okCodes(){return Object.entries(S.market.stocks).filter(([c,v])=>v.s==='ok'&&v.c!=null).map(([c])=>c);}
-function kindOf(c){return 'coin';}
 /* ================= TAB: G & L (Gainers & Losers) ================= */
 let MOV=1;
 function rGL(){const ret=(c,n)=>{const m=mk(c);if(n===1){const l=livePx(c);return l?l.ch:m.ch;}const p=m.sp||[];return p.length>n?((nowPx(c)/p[p.length-1-n]-1)*100):null;};
@@ -1055,7 +1029,6 @@ function rNews(){const L0=allNews(7);const M=newsMood(L0);const mine=new Set([..
   document.querySelectorAll('[data-nf]').forEach(b=>b.onclick=()=>{NWF=b.dataset.nf;rNews();});
   $('#nwc').onchange=e=>{NWC=e.target.value;rNews();};
   document.querySelectorAll('#main [data-sc]').forEach(b=>b.onclick=()=>stockSheet(b.dataset.sc,nameOf(b.dataset.sc)));}
-function openAllNews(code){NWC=code||'';NWF='all';closeSheet();const hp=document.getElementById('help');if(hp)hp.remove();document.body.classList.remove('ovl');goTab('news');}
 function openPotNews(){const L=potNews();if(!L.length)return toast('Tiada berita positif yang kukuh hari ini');
   const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
   d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true"><div><div class="shd-top" style="margin-bottom:6px"><h2 style="margin:0">📰 Berita Berpotensi</h2><button class="xbtn" id="helpX" aria-label="Tutup">✕</button></div>
@@ -1104,11 +1077,21 @@ function manStartTxt(p){return p.at&&isoD(new Date(p.at))===p.d?fmtDT(p.at):fmtD
 function AUTO(){const d={on:false,sig:true,news:false,stake:20,tp:5};const x=S.settings.auto||(S.settings.auto={});for(const k in d)if(!(k in x))x[k]=d[k];return x;}   // ubah objek yang sama (rujukan kekal)
 function capState(){const a=AUTO();if(!(a.cap>0))return null;let real=0,lock=0,unreal=0,n=0;
   (S.manual||[]).forEach(p=>{if(p.src!=='A'||(Date.parse(p.at||0)||0)<(a.capAt||0))return;n++;
-    if(p.closed)real+=manPnl(p,p.closed.exit);else{lock+=+p.stake||0;const m=mk(p.code);if(m&&m.c)unreal+=manPnl(p,m.c);}});
-  const free=a.cap+real-lock,eq=a.cap+real,per=Math.round(eq/5*100)/100;let slots=Math.max(0,Math.floor(free/per+1e-9));if(free-slots*per>=per*.5)slots++;return {cap:a.cap,real,lock,unreal,free,eq,per,slots,n};}   // modal dibahagi 5 (≈20% setiap posisi)
+    if(p.closed)real+=manPnl(p,p.closed.exit);else{lock+=+p.stake||0;const n=nowPx(p.code);if(n)unreal+=manPnl(p,n);}});
+  const free=a.cap+real-lock,eq=a.cap+real,per=Math.round(eq/5*100)/100;let slots=Math.max(0,Math.floor(free/per+1e-9));if(free-slots*per>=per*.5)slots++;return {cap:a.cap,real,lock,unreal,free,eq,per,slots,n,open:(S.manual||[]).filter(p=>p.src==='A'&&!p.closed&&(Date.parse(p.at||0)||0)>=(a.capAt||0)).length};}   // modal dibahagi 5 (≈20% setiap posisi)
 function hzOf(p){return p&&p.hz?p.hz:BTH().h;}   // had hari posisi (Robot Auto: tamat tempoh isyarat)
+/* Papan modal pelaburan Robot Auto (tab Robot) */
+function capCardHTML(){const a=AUTO(),C=capState();
+  if(!C)return `<button class="card capd capd0" id="capBtn"><span>💰</span><span><b>Modal pelaburan</b><small>Belum ditetapkan. Tekan untuk tetapkan modal Robot Auto.</small></span><span class="muted" style="font-size:20px">›</span></button>`;
+  const val=C.eq+C.unreal,ret=(val/C.cap-1)*100,use=C.eq>0?Math.min(100,Math.max(0,C.lock/C.eq*100)):0;
+  const c=(l,v,k='')=>`<div><small>${l}</small><b class="${k}">${v}</b></div>`;
+  return `<button class="card capd" id="capBtn"><div class="row between" style="align-items:center;width:100%"><h2 style="margin:0">💰 Modal pelaburan</h2><span class="badge ${a.on?'b-ok':'b-na'}">${a.on?'Robot Auto ON':'Robot Auto OFF'}</span></div>
+    <div class="capv"><b class="${val>=C.cap?'up':'dn'}">${rm(val)}</b><span class="${ret>=0?'up':'dn'}">${ret>=0?'+':''}${ret.toFixed(2)}%</span><small>nilai semasa daripada modal ${rm(C.cap)}</small></div>
+    <div class="capbar"><span style="width:${use.toFixed(1)}%"></span></div><div class="capbl"><span>Dalam pasaran ${use.toFixed(0)}%</span><span>Tunai ${(100-use).toFixed(0)}%</span></div>
+    <div class="capg3">${c('Dalam pasaran',rm(C.lock))}${c('Baki tersedia',rm(C.free),C.free>=C.per*.5?'':'dn')}${c('Posisi terbuka',C.open)}${c('Untung/rugi terbuka',rmS(C.unreal),C.unreal>=0?'up':'dn')}${c('Untung/rugi selesai',rmS(C.real),C.real>=0?'up':'dn')}${c('Saiz setiap posisi',rm(C.per))}</div>
+    <small class="muted capn">${C.slots?`Boleh masuk ${C.slots} posisi lagi`:'Modal penuh: robot tunggu posisi ditutup'} · ${C.n} dagangan Auto sejak ${a.capAt?fmtD(new Date(a.capAt+8*3600e3).toISOString().slice(0,10)):'-'} · kos ${(costRT()*100).toFixed(2)}% pergi-balik</small></button>`;}
 function autoCardHTML(){const a=AUTO();const ty=[a.sig&&'🟢',a.news&&'📰'].filter(Boolean).join(' ');
-  return `<button class="card autob" id="auBtn"><span class="autob-ic">🤖</span><span class="autob-t"><b>Robot Auto</b><small>${a.on?(capState()?`Hidup · ${ty||'tiada jenis dipilih'} · modal ${rm(capState().eq)} · untung ${a.tp}% · baki ${rm(capState().free)}`:`Hidup · ${ty||'tiada jenis dipilih'} · $${a.stake} · untung ${a.tp}%`):'Mati · tekan untuk hidupkan'}<br>💸 ${esc(costLabel())} · ${(costRT()*100).toFixed(2)}% pergi-balik</small></span><span class="badge ${a.on?'b-ok':''}">${a.on?'ON':'OFF'}</span><span class="muted" style="font-size:20px">›</span></button>`;}
+  return `<button class="card autob" id="auBtn"><span class="autob-ic">🤖</span><span class="autob-t"><b>Robot Auto</b><small>${a.on?(capState()?`Hidup · ${ty||'tiada jenis dipilih'} · untung ${a.tp}%`:`Hidup · ${ty||'tiada jenis dipilih'} · $${a.stake} · untung ${a.tp}%`):'Mati · tekan untuk hidupkan'}<br>💸 ${esc(costLabel())} · ${(costRT()*100).toFixed(2)}% pergi-balik</small></span><span class="badge ${a.on?'b-ok':''}">${a.on?'ON':'OFF'}</span><span class="muted" style="font-size:20px">›</span></button>`;}
 function openAuto(keep){const a=AUTO();const C=capState();const D=keep&&openAuto._d?openAuto._d:(openAuto._d={...COST()});
   openSheet(`<div class="row between" style="align-items:center"><h2 style="margin:0">🤖 Robot Auto</h2><label class="sw"><input type="checkbox" id="auOn" ${a.on?'checked':''}><span></span></label></div>
     <p class="muted" style="margin:6px 0 8px;font-size:13px">Bila hidup, robot masuk ujian sendiri setiap pagi (selepas data harian) untuk jenis yang anda pilih, guna harga tutup terakhir. Coin ini ditanda A dalam senarai.</p>
@@ -1155,7 +1138,7 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
     add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});
   if(add.length){S.manual.push(...add);S.autoIn={at:now,n:add.length,names:add.map(p=>shortName(p.name)),id:add[0].id};save();Promise.allSettled(add.map(p=>getBars(p.code))).then(()=>{manRefresh();if(TAB==='robot')rRobot();});}
   return add.length;}
-function bindAuto(){const b=$('#auBtn');if(b)b.onclick=()=>openAuto();}
+function bindAuto(){const b=$('#auBtn');if(b)b.onclick=()=>openAuto();const c=$('#capBtn');if(c)c.onclick=()=>openAuto();}
 function manDelete(id){S.manual=(S.manual||[]).filter(x=>x.id!==id);S.manDel=[...new Set([...(S.manDel||[]),id])].slice(-300);save();}
 function manOpen(code){return (S.manual||[]).find(p=>p.code===code&&!p.closed);}
 function manLevels(code,en){
@@ -1217,15 +1200,15 @@ function openManual(code){
   let body;
   if(P){const now=nowPx(code);const u=now?manPnl(P,now):null;
     body=`<div class="card" style="margin:0 0 10px"><div class="kv"><span>Masuk</span><b>${fmtD(P.d)} @ ${px(P.en)}</b></div><div class="kv"><span>Nilai maya</span><b>${rm(P.stake)}</b></div>
-      <div class="kv"><span>Paras atas / bawah</span><b>${px(P.tg)} / ${px(P.sl)}</b></div><div class="kv"><span>Harga kini</span><b>${now?px(now):'-'}</b></div>
+      ${P.st==='rsi2'?`<div class="kv"><span>Keluar / cut loss</span><b>EMA5 / ${px(P.sl)}</b></div>`:P.st==='brk20'?`<div class="kv"><span>Trailing stop</span><b>${px(P.trail||P.sl)}</b></div>`:`<div class="kv"><span>Paras atas / bawah</span><b>${px(P.tg)} / ${px(P.sl)}</b></div>`}<div class="kv"><span>Harga kini</span><b>${now?px(now):'-'}</b></div>
       <div class="kv"><span>Untung / rugi</span><b class="${u==null?'':u>=0?'up':'dn'}">${u==null?'-':rmS(u)}</b></div><div class="kv"><span>Tutup paling lewat</span><b>${fmtD(addTradingDays(P.d,P.inc?hzOf(P)-1:hzOf(P)))}</b></div></div>
       <label>Harga tutup (ubah jika anda tutup pada harga lain)</label><input id="mX" inputmode="decimal" value="${now?(+now).toFixed(pxDec(now)):''}">
       <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="mxClose">Tutup sekarang</button><button class="btn sec" id="mxDel">Padam</button></div>`;}
-  else{const en=(m&&m.c)||0;const L=en?manLevels(code,en):{tg:0,sl:0};
-    body=`<p class="muted" style="margin:0 0 6px">Ujian maya tanpa wang sebenar. Robot semak setiap hari dan tutup bila harga sampai paras atas (menang), paras bawah (kalah) atau selepas ${BTH().h} hari.</p>
+  else{const en=nowPx(code)||(m&&m.c)||0;const L=en?manLevels(code,en):{tg:0,sl:0};
+    const SG0=signalFor(code);body=`<p class="muted" style="margin:0 0 6px">Ujian maya tanpa wang sebenar, dengan kos ${esc(costLabel())} (${(costRT()*100).toFixed(2)}% pergi-balik). ${SG0&&SG0.st==='rsi2'?'Coin ini ada isyarat RSI 2: robot tutup bila harga tutup harian melepasi EMA5, kena cut loss atau selepas 10 hari.':SG0&&SG0.st==='brk20'?'Coin ini ada isyarat Breakout 20: robot tutup bila kena trailing stop (3× ATR).':`Robot semak setiap hari dan tutup bila harga sampai paras atas (menang), paras bawah (kalah) atau selepas ${BTH().h} hari.`} Anda boleh tutup sendiri bila-bila masa.</p>
       <label>Nilai maya (USD)</label><input id="mS" inputmode="decimal" value="${rbStake()}">
-      <label>Harga masuk</label><input id="mE" inputmode="decimal" value="${en?(+en).toFixed(pxDec(en)):''}">
-      <label>Tarikh masuk</label><input id="mD" type="date" value="${S.market?entryDate(S.market.meta.asof):today()}">
+      <label>Harga masuk (harga terkini)</label><input id="mE" inputmode="decimal" value="${en?(+en).toFixed(pxDec(en)):''}">
+      <label>Tarikh masuk</label><input id="mD" type="date" value="${today()}">
       <label>Paras atas (sasaran)</label><input id="mT" inputmode="decimal" value="${L.tg?L.tg.toFixed(pxDec(L.tg)):''}">
       <label>Paras bawah (had)</label><input id="mL" inputmode="decimal" value="${L.sl?L.sl.toFixed(pxDec(L.sl)):''}">
       <p class="muted" style="font-size:12px">Paras atas dan bawah diisi automatik daripada isyarat atau ATR coin ini. Anda boleh ubah.</p>
@@ -1235,7 +1218,7 @@ function openManual(code){
   const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};
   d.onclick=e=>{if(e.target===d)close();};$('#helpX').onclick=close;
   const after=()=>{close();if($('#sheet').classList.contains('on'))stockSheet(code,nm);if(TAB==='robot')rRobot();};
-  if(P){$('#mxClose').onclick=()=>{const now=nowPx(code);if(!now&&!num($('#mX').value))return toast('Harga kini belum tersedia');const xv=num($('#mX').value)||now;P.closed={res:'M',exit:xv,end:today(),at:new Date().toISOString(),days:tdBetween(P.d,today())};save();toast('Ujian manual ditutup');after();};
+  if(P){$('#mxClose').onclick=()=>{const now=nowPx(code);if(!now&&!num($('#mX').value))return toast('Harga kini belum tersedia');const xv=num($('#mX').value)||now;P.closed={res:'M',exit:xv,end:today(),at:new Date().toISOString(),days:tdBetween(P.d,today())};save();toast('Ujian ditutup');after();};
     $('#mxDel').onclick=()=>{manDelete(P.id);toast('Dipadam');after();};}
   else $('#mGo').onclick=()=>{const st=num($('#mS').value),en=num($('#mE').value),tg=num($('#mT').value),sl=num($('#mL').value),dt=$('#mD').value;
     if(!(st>0&&en>0))return toast('Masukkan nilai maya dan harga masuk');if(!(tg>en&&sl<en&&sl>0))return toast('Paras atas mesti lebih tinggi dan paras bawah lebih rendah daripada harga masuk');
@@ -1247,7 +1230,7 @@ function manRow(p){const nm=shortName(p.name||nameOf(p.code));const m=mk(p.code)
   if(p.closed){const C=p.closed,r=RES3[C.res],u=manPnl(p,C.exit),xp=u/p.stake*100;
     return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span></span><span class="mnow"><small>Harga kini</small><b>${now?px(now):'-'}</b><em class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</em></span></div></div>`;}
   const u=now?manPnl(p,now):null;let pct=u!=null?u/p.stake*100:null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
-  return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span>${p.src==='A'&&p.why?`<br><small class="muted">${{sig:'🟢 Isyarat Kuat',champ:'🏆 Champion',news:'📰 Berita'}[p.why]||''}</small>`:''}</span><span class="mnow"><small>Harga kini</small><b class="${pc}">${now?px(now):'-'}</b>${u==null?'':`<em class="${u>=0?'up':'dn'}">${rmS(u)} (${pct>0?'+':''}${pct.toFixed(1)}%)</em>`}</span></div></div>`;}
+  return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span>${p.src==='A'&&p.why?`<br><small class="muted">${{sig:'🟢 Isyarat Kuat',news:'📰 Berita'}[p.why]||''}</small>`:''}</span><span class="mnow"><small>Harga kini</small><b class="${pc}">${now?px(now):'-'}</b>${u==null?'':`<em class="${u>=0?'up':'dn'}">${rmS(u)} (${pct>0?'+':''}${pct.toFixed(1)}%)</em>`}</span></div></div>`;}
 function openManDetail(id){const p=(S.manual||[]).find(x=>x.id===id);if(!p)return;
   const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
   d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true"><div><div class="shd-top"><div class="shd-name"><h2 style="margin:0">${p.src==='A'?'🤖':'✍️'} ${esc(shortName(p.name||nameOf(p.code)))}</h2><div class="code">${esc(p.code)} · ${p.src==='A'?'Robot Auto':'Robot Manual'}</div></div><button class="xbtn" id="helpX" aria-label="Tutup">✕</button></div></div>
@@ -1284,6 +1267,7 @@ function rManual(){
   let h=`<div class="card"><h2>🤖 Robot</h2><p class="muted" style="margin-top:0">Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.</p>
     <div class="mstat"><div><b>${op.length}</b><span>Sedang diuji</span></div><div><b class="${opn>=0?'up':'dn'}">${rmS(opn)}</b><span>Untung/rugi kini</span></div><div><b>${cl.length?Math.round(w/cl.length*100)+'%':'-'}</b><span>Ketepatan</span></div><div><b class="${pnl>=0?'up':'dn'}">${cl.length?rmS(pnl):'-'}</b><span>Untung/rugi selesai</span></div></div>${maSplitHTML(M)}${M.length?`<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">${cl.length?'<button class="btn sm sec" id="rsClosed">Kosongkan yang selesai</button>':''}<button class="btn sm sec" id="rsAll">↺ Reset semua</button></div>`:''}</div>`;
   h+=autoCardHTML();
+  h+=capCardHTML();
   if(M.length){const cs=cl.slice().sort((a,b)=>a.closed.end.localeCompare(b.closed.end));let cum=0;const first=M.map(p=>p.d).sort()[0];
     const cv=[[first,0],...cs.map(p=>[p.closed.end,cum+=manPnl(p,p.closed.exit)])];if(op.length||cv.length<2)cv.push([today(),cum+opn]);
     h+=`<div class="card eqcard"><h2>Graf untung / rugi</h2><p class="muted" style="margin:0;font-size:12px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1,'eqs')}</div>`;}
@@ -1333,8 +1317,8 @@ function stockStatus(code,name){
   const hd=S.holdings.find(h=>h.code===code);const out=[];
   const sig=signalFor(code);const now=m&&m.c;
   if(sig&&now!=null){const md=Math.max(1,Math.round(sig.md||0)),el=tdBetween(sig.start,S.market.meta.asof);
-    if(now>=sig.tg)out.push({ic:'🎯',cls:'s-up',t:`Sudah sampai paras atas ${px(sig.tg)} (isyarat ${fmtD(sig.start)})`});
-    else if(now<=sig.sl)out.push({ic:'🛑',cls:'s-no',t:`Jatuh ke paras bawah ${px(sig.sl)} (isyarat ${fmtD(sig.start)})`});
+    if(now>=sig.tg)out.push({ic:'🎯',cls:'s-up',t:sig.st==='rsi2'?`Sudah melepasi paras keluar EMA5 ${px(sig.tg)} (isyarat ${fmtD(sig.start)})`:`Sudah sampai paras atas ${px(sig.tg)} (isyarat ${fmtD(sig.start)})`});
+    else if(now<=sig.sl)out.push({ic:'🛑',cls:'s-no',t:`Jatuh ke paras cut loss ${px(sig.sl)} (isyarat ${fmtD(sig.start)})`});
     else if(el>BTH().h)out.push({ic:'⌛',cls:'s-na',t:`Isyarat ${fmtD(sig.start)} tamat tanpa keputusan`});
     else if(el>md)out.push({ic:'⏳',cls:'s-warn',t:`Isyarat ${sig.p}% · tempoh indicator trading sudah berlalu (hari ke-${dayNo(sig.start)} daripada ~${md}) · bermula ${fmtD(entryDate(sig.start))} hingga ${fmtD(endFor(sig.start,md))}`});
     else out.push({ic:'🟢',cls:'s-ok',t:`Isyarat aktif ${sig.p}% (${rateSignal({...sig,n:sig.n,w:sig.w}).lbl}) · tempoh indicator trading (hari ke-${dayNo(sig.start)} daripada ~${md}) · bermula ${fmtD(entryDate(sig.start))} hingga ${fmtD(endFor(sig.start,md))}`});}
@@ -1366,11 +1350,11 @@ function openSummary(){
 }
 function openStatusHelp(){
   const rows=[
-    ['🟢','Isyarat aktif · tempoh indicator trading','Ada isyarat teknikal yang masih "segar". Harga belum sampai paras atas atau paras bawah, dan masih dalam tempoh biasa coin ini sampai ke paras atas dalam sejarah. "Hari ke-X daripada ~Y" menunjukkan berapa hari sudah berlalu sejak isyarat bermula.'],
-    ['⏳','Tempoh biasa sudah berlalu','Isyarat masih berjalan, tetapi sudah melepasi tempoh biasa. Dalam sejarah, kebanyakan isyarat yang berjaya sampai paras atas lebih awal, jadi peluangnya makin berkurang.'],
-    ['🎯','Sudah sampai paras atas','Harga sudah mencapai paras atas (+2× ATR) sejak isyarat bermula. Isyarat itu telah mencapai sasaran sejarahnya.'],
-    ['🛑','Jatuh ke paras bawah','Harga sudah jatuh ke paras bawah (−1.25× ATR). Isyarat itu gagal.'],
-    ['⌛','Isyarat tamat tanpa keputusan','30 hari berlalu tanpa harga sampai paras atas atau paras bawah.'],
+    ['🟢','Isyarat aktif · tempoh indicator trading','Strategi yang lulus backtest (RSI 2 atau Breakout 20) baru memberi isyarat dan masih berjalan. Harga belum sampai paras keluar atau cut loss. "Hari ke-X daripada ~Y" menunjukkan berapa hari sudah berlalu berbanding tempoh biasa dagangan strategi ini.'],
+    ['⏳','Tempoh biasa sudah berlalu','Isyarat masih berjalan, tetapi sudah melepasi tempoh biasa. Dalam backtest, kebanyakan dagangan yang untung selesai lebih awal.'],
+    ['🎯','Sudah sampai paras keluar','RSI 2: harga sudah melepasi EMA5, iaitu paras strategi keluar. Breakout 20: harga sudah melepasi purata untung sejarah. Isyarat itu telah selesai.'],
+    ['🛑','Jatuh ke paras cut loss','Harga sudah jatuh ke paras cut loss strategi (RSI 2: 2.5× ATR, Breakout 20: trailing stop 3× ATR). Isyarat itu gagal.'],
+    ['⌛','Isyarat tamat tanpa keputusan','Had hari strategi berlalu tanpa harga sampai paras keluar atau cut loss.'],
     ['⚪','Tiada isyarat teknikal aktif','Tiada isyarat baharu buat masa ini. Skor dan tahap (Kuat / Neutral / Lemah) menunjukkan keadaan indicator sekarang.'],
     ['✍️','Robot manual sejak …','Coin ini sedang diuji dalam Robot Manual anda (tab Robot): tarikh dan harga masuk maya, serta untung atau rugi semasa.'],
     ['💧','Kecairan rendah','Coin yang jarang didagang (bawah $1 juta sehari). Harga belian dan jualan sebenar coin begini selalunya lebih teruk, jadi app tidak memberi isyarat untuknya.']];
@@ -1396,7 +1380,6 @@ function statusHTML(code,name,compact){
 
 /* ================= KETEPATAN ISYARAT ================= */
 const RES={W:['Paras atas','up'],L:['Paras bawah','dn'],T:['Tamat masa','']};
-function sumRow(lbl,x){return x&&x.n?`<div class="kv"><span>${lbl}</span><b>${x.w}/${x.n} ke paras atas (${x.win}%) · ${x.avg>0?'+':''}${x.avg}%</b></div>`:`<div class="kv"><span>${lbl}</span><b>-</b></div>`;}
 /* ================= PUSAT AMARAN ================= */
 const ALERT_DEF={on:{berita:true,isyarat:true,robot:true,harga:true,teknikal:true},lossPct:10,price:[],seen:{},notified:{},notify:false};
 function AL(){if(!S.alerts)S.alerts={};const a=S.alerts;const D=structuredClone(ALERT_DEF);Object.keys(D).forEach(k=>{if(a[k]===undefined)a[k]=D[k];});if(!a.on)a.on={};Object.keys(D.on).forEach(k=>{if(a.on[k]===undefined)a.on[k]=D.on[k];});
@@ -1416,13 +1399,13 @@ function robotAlerts(push){weeklyAlert(push);
   const asof=S.market?S.market.meta.asof:today(),H=BTH().h;
   (S.manual||[]).forEach(p=>{const H=hzOf(p);const nm=shortName(p.name||nameOf(p.code));const base='man:'+p.id+':';
     if(p.closed){const C=p.closed;if(daysBetween(C.end,today())>14)return;const u=manPnl(p,C.exit);
-      if(C.res==='W')push({id:base+'W',lv:'critical',ic:'🎯',cat:'robot',code:p.code,go:'robot',title:`${nm}: sampai paras atas, masa tutup (jual)`,body:`Harga capai ${px(p.tg)} pada ${fmtD(C.end)}. Ujian manual ditutup, ${rmS(u)}.`});
-      else if(C.res==='L')push({id:base+'L',lv:'critical',ic:'🛑',cat:'robot',code:p.code,go:'robot',title:`${nm}: kena cut loss, force close`,body:`Harga jatuh ke had ${px(p.sl)} pada ${fmtD(C.end)}. Ujian manual ditutup, ${rmS(u)}.`});
-      else if(C.res==='T')push({id:base+'T',lv:'critical',ic:'⌛',cat:'robot',code:p.code,go:'robot',title:`${nm}: tarikh tutup sudah sampai`,body:p.hz?`Tempoh isyarat tamat pada ${fmtD(C.end)}. Ujian ditutup pada ${px(C.exit)}, ${rmS(u)}.`:`${H} hari tamat pada ${fmtD(C.end)}. Ujian manual ditutup pada ${px(C.exit)}, ${rmS(u)}.`});
+      if(C.res==='W')push({id:base+'W',lv:'critical',ic:'🎯',cat:'robot',code:p.code,go:'robot',title:`${nm}: ditutup untung`,body:`Ditutup pada ${px(C.exit)} (${fmtD(C.end)}), ${rmS(u)}.`});
+      else if(C.res==='L')push({id:base+'L',lv:'critical',ic:'🛑',cat:'robot',code:p.code,go:'robot',title:`${nm}: kena cut loss`,body:`Ditutup pada ${px(C.exit)} (${fmtD(C.end)}), ${rmS(u)}.`});
+      else if(C.res==='T')push({id:base+'T',lv:'critical',ic:'⌛',cat:'robot',code:p.code,go:'robot',title:`${nm}: tarikh tutup sudah sampai`,body:p.hz?`Tempoh isyarat tamat pada ${fmtD(C.end)}. Ujian ditutup pada ${px(C.exit)}, ${rmS(u)}.`:`${H} hari tamat pada ${fmtD(C.end)}. Ujian ditutup pada ${px(C.exit)}, ${rmS(u)}.`});
       return;}
-    const m=mk(p.code),now=m&&m.c;const last=addTradingDays(p.d,H);const u=now?manPnl(p,now):null;
-    if(now&&now>p.sl&&(now/p.sl-1)*100<=2)push({id:base+'N:'+(m.d||asof),lv:'critical',ic:'⚠️',cat:'robot',code:p.code,go:'robot',title:`${nm}: hampir cut loss`,body:`Harga kini ${px(now)}, had cut loss ${px(p.sl)} (${((now/p.sl-1)*100).toFixed(1)}% lagi).`});
-    if(addTradingDays(p.d,H-1)<=asof)push({id:base+'E',lv:'critical',ic:'📅',cat:'robot',code:p.code,go:'robot',title:`${nm}: tutup esok (tarikh tutup paling lewat)`,body:`Ujian manual akan ditutup pada ${fmtD(last)}${u!=null?`. Untung/rugi kini ${rmS(u)}`:''}.`});
+    const m=mk(p.code),now=nowPx(p.code);const last=addTradingDays(p.d,H);const u=now?manPnl(p,now):null;const SL=p.trail||p.sl;
+    if(now&&now>SL&&(now/SL-1)*100<=2)push({id:base+'N:'+((m&&m.d)||asof),lv:'critical',ic:'⚠️',cat:'robot',code:p.code,go:'robot',title:`${nm}: hampir cut loss`,body:`Harga kini ${px(now)}, had cut loss ${px(SL)} (${((now/SL-1)*100).toFixed(1)}% lagi).`});
+    if(addTradingDays(p.d,H-1)<=asof)push({id:base+'E',lv:'critical',ic:'📅',cat:'robot',code:p.code,go:'robot',title:`${nm}: tutup esok (tarikh tutup paling lewat)`,body:`Ujian akan ditutup pada ${fmtD(last)}${u!=null?`. Untung/rugi kini ${rmS(u)}`:''}.`});
     else if(!p.hz&&p.md&&addTradingDays(p.d,p.md)<=asof)push({id:base+'D',lv:'action',ic:'⏳',cat:'robot',code:p.code,go:'robot',title:`${nm}: tempoh biasa sudah tamat`,body:`Tempoh biasa hingga ${fmtD(addTradingDays(p.d,p.md))}${u!=null?`. Untung/rugi kini ${rmS(u)}`:''}. Pertimbang untuk tutup.`});
   });
 }
@@ -1542,6 +1525,17 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'Modal pelaburan':'Investment capital','Belum ditetapkan. Tekan untuk tetapkan modal Robot Auto.':'Not set. Tap to set Auto Robot capital.','Robot Auto ON':'Auto Robot ON','Robot Auto OFF':'Auto Robot OFF','Dalam pasaran':'In market','Baki tersedia':'Available balance','Posisi terbuka':'Open positions','Untung/rugi terbuka':'Open P/L','Untung/rugi selesai':'Closed P/L','Saiz setiap posisi':'Size per position',
+
+'Sudah sampai paras keluar':'Exit level reached','Jatuh ke paras cut loss':'Fell to cut-loss level',
+'Strategi yang lulus backtest (RSI 2 atau Breakout 20) baru memberi isyarat dan masih berjalan. Harga belum sampai paras keluar atau cut loss. "Hari ke-X daripada ~Y" menunjukkan berapa hari sudah berlalu berbanding tempoh biasa dagangan strategi ini.':'A backtested strategy (RSI 2 or Breakout 20) has just signalled and is still running. Price has not reached the exit level or the cut loss. "Day X of ~Y" shows how many days have passed versus the typical trade length of this strategy.',
+'Isyarat masih berjalan, tetapi sudah melepasi tempoh biasa. Dalam backtest, kebanyakan dagangan yang untung selesai lebih awal.':'The signal is still running but has passed the typical period. In the backtest, most profitable trades finished earlier.',
+'RSI 2: harga sudah melepasi EMA5, iaitu paras strategi keluar. Breakout 20: harga sudah melepasi purata untung sejarah. Isyarat itu telah selesai.':"RSI 2: price is above EMA5, the strategy's exit level. Breakout 20: price is above the historical average win. The signal has finished.",
+'Harga sudah jatuh ke paras cut loss strategi (RSI 2: 2.5× ATR, Breakout 20: trailing stop 3× ATR). Isyarat itu gagal.':"Price has fallen to the strategy's cut-loss level (RSI 2: 2.5× ATR, Breakout 20: 3× ATR trailing stop). The signal failed.",
+'Had hari strategi berlalu tanpa harga sampai paras keluar atau cut loss.':"The strategy's day limit passed without price reaching the exit level or the cut loss.",
+'Harga masuk (harga terkini)':'Entry price (latest price)','Keluar / cut loss':'Exit / cut loss','Ujian ditutup':'Test closed','⏳ tempoh biasa sudah berlalu · % = kebarangkalian sejarah':'⏳ typical period has passed · % = historical probability',
+'Nota: % peluang pada setiap isyarat dikira daripada keseluruhan sejarah coin itu, jadi ia cenderung terlebih yakin. Ujian walk-forward di atas (hanya guna data sebelum hari isyarat) ialah ukuran yang lebih jujur.':"Note: the % chance on each signal is calculated from the coin's whole history, so it tends to be overconfident. The walk-forward test above (using only data before the signal day) is a more honest measure.",
+
 'Kos dagangan sebenar':'Real trading costs','Belum disimpan':'Not saved','Disimpan':'Saved','Simpan kos':'Save costs','Simpan & siap':'Save & done','✓ Tetapan Robot Auto disimpan':'✓ Auto Robot settings saved',
 'Untung/rugi robot dikira seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.':'Robot profit/loss is counted like a real trade: buy fee + sell fee + spread, based on your platform.','Robot kira untung/rugi seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.':'The robot counts profit/loss like a real trade: buy fee + sell fee + spread, based on your platform.',
 'Kos sendiri':'Custom cost','Jenis order':'Order type','Exchange (order pasaran)':'Exchange (market order)','Spread / slippage (%)':'Spread / slippage (%)','Jumlah kos pergi-balik':'Total round-trip cost','Yuran setiap transaksi (%)':'Fee per transaction (%)',
@@ -1999,7 +1993,7 @@ Object.assign(EN_EXACT,{
 'Maksud status':'What the statuses mean','Tahap skor teknikal':'Technical score levels',
 'Isyarat aktif · dalam tempoh biasa':'Active signal · within typical period','Isyarat aktif · tempoh indicator trading':'Active signal · trading indicator period',
 'Ada isyarat teknikal yang masih "segar". Harga belum sampai paras atas atau paras bawah, dan masih dalam tempoh biasa coin ini sampai ke paras atas dalam sejarah. "Hari ke-X daripada ~Y" menunjukkan berapa hari sudah berlalu sejak isyarat bermula.':'There is a "fresh" technical signal. Price has not reached the upper or lower level and is still within the time this coin typically took to reach the upper level historically. "Day X of ~Y" shows how many days have passed since the signal started.',
-'Isyarat masih berjalan, tetapi sudah melepasi tempoh biasa. Dalam sejarah, kebanyakan isyarat yang berjaya sampai paras atas lebih awal, jadi peluangnya makin berkurang.':'The signal is still running but has passed its typical period. Historically, most successful signals reached the upper level earlier, so the odds are getting lower.',
+'Isyarat masih berjalan, tetapi sudah melepasi tempoh biasa. Dalam backtest, kebanyakan dagangan yang untung selesai lebih awal.':'The signal is still running but has passed its typical period. Historically, most successful signals reached the upper level earlier, so the odds are getting lower.',
 'Sudah sampai paras atas':'Reached the upper level','Harga sudah mencapai paras atas (+2× ATR) sejak isyarat bermula. Isyarat itu telah mencapai sasaran sejarahnya.':'Price has reached the upper level (+2× ATR) since the signal started. The signal has hit its historical target.',
 'Jatuh ke paras bawah':'Fell to the lower level','Harga sudah jatuh ke paras bawah (−1.25× ATR). Isyarat itu gagal.':'Price has fallen to the lower level (−1.25× ATR). The signal failed.',
 'Isyarat tamat tanpa keputusan':'Signal expired without a result','30 hari berlalu tanpa harga sampai paras atas atau paras bawah.':'30 days passed without price reaching the upper or lower level.',
@@ -2087,6 +2081,19 @@ EN_RX.unshift(
 [/^✓ Kos (.+) \(([\d.]+)% pergi-balik\) disimpan$/,(m,a,b)=>`✓ Cost ${trCost(a)} (${b}% round trip) saved`],
 [/^💸 (.+) · ([\d.]+)% pergi-balik$/,(m,a,b)=>`💸 ${trCost(a)} · ${b}% round trip`],
 [/^Harga tutup harian > (\S+)$/,'Daily close > $1'],[/^⏹ Ditutup pada (\S+) · (\S+)$/,'⏹ Closed at $1 · $2'],
+[/^Ditutup pada (\S+) \((.+)\), (\S+)\.$/,(m,a,b,c)=>`Closed at ${a} (${trText(b)}), ${c}.`],
+[/^(.+): ditutup untung$/,(m,a)=>`${a}: closed in profit`],[/^(.+): kena cut loss$/,(m,a)=>`${a}: hit cut loss`],
+[/^kini (\S+) \(([+\-−]?[\d.]+)%\)$/,'now $1 ($2%)'],
+[/^Sudah melepasi paras keluar EMA5 (\S+) \(isyarat (.+)\)$/,(m,a,b)=>`Already above EMA5 exit level ${a} (signal ${trText(b)})`],
+[/^Jatuh ke paras cut loss (\S+) \(isyarat (.+)\)$/,(m,a,b)=>`Fell to cut-loss level ${a} (signal ${trText(b)})`],
+[/^Ujian maya tanpa wang sebenar, dengan kos (.+) \(([\d.]+)% pergi-balik\)\. (.+) Anda boleh tutup sendiri bila-bila masa\.$/,(m,a,b,c)=>`Virtual test with no real money, with ${trCost(a)} costs (${b}% round trip). ${({'Coin ini ada isyarat RSI 2: robot tutup bila harga tutup harian melepasi EMA5, kena cut loss atau selepas 10 hari.':'This coin has an RSI 2 signal: the robot closes when the daily close is above EMA5, at the cut loss or after 10 days.','Coin ini ada isyarat Breakout 20: robot tutup bila kena trailing stop (3× ATR).':'This coin has a Breakout 20 signal: the robot closes at the trailing stop (3× ATR).'})[c]||trText(c)} You can close it yourself any time.`],
+[/^Isyarat datang daripada strategi yang lulus backtest robot kajian \(🧪 Keputusan backtest\)\. Setiap strategi diuji atas semua coin selama ~5 tahun: beli pada harga buka esok selepas isyarat, keluar ikut peraturan strategi \(EMA5 \/ trailing stop \/ had hari\), kos ([\d.]+)% ditolak\. .*$/,'Signals come from strategies that passed the research robot backtest (🧪 Backtest results). Each strategy was tested on all coins over ~5 years: buy at the next open after the signal, exit by the strategy rules (EMA5 / trailing stop / day limit), with a $1% cost deducted. The win % and average are pooled across all coins, not one coin, to avoid overconfidence. These are historical statistics, not a buy or sell recommendation.'],
+[/^Isyarat aktif = strategi yang purata pulangannya kekal positif walaupun diambil had bawah julat keyakinan, dan positif dalam kedua-dua separuh tempoh\.(?: Perbandingan: beli & pegang BTC dalam tempoh sama (\S+)\.)?$/,(m,a)=>`Active signal = a strategy whose average return stays positive even at the lower bound of the confidence interval, and is positive in both halves of the period.${a?` Comparison: buy & hold BTC over the same period ${a}.`:''}`],
+[/^Tiada penapis yang terbukti meningkatkan purata pulangan secara bermakna — perbezaannya masih dalam julat keyakinan\. Penapis tidak diaktifkan supaya tidak "overfit"\. Asas: (\d+) isyarat, (\S+)% menang, purata (\S+) setiap isyarat\.$/,'No filter was shown to meaningfully improve the average return — the differences are within the confidence interval. Filters are not switched on to avoid "overfitting". Base: $1 signals, $2% won, average $3 per signal.'],
+[/^(\d+) \/ (\d+) isyarat$/,'$1 / $2 signals'],[/^Keputusan sejarah, bukan jaminan\. Dikemas kini setiap Ahad \((.+)\)\.$/,(m,a)=>`Historical results, not a guarantee. Updated every Sunday (${trText(a)}).`],
+[/^nilai semasa daripada modal (\S+)$/,'current value from $1 capital'],[/^Dalam pasaran (\d+)%$/,'In market $1%'],[/^Tunai (\d+)%$/,'Cash $1%'],
+[/^(?:Boleh masuk (\d+) posisi lagi|(Modal penuh: robot tunggu posisi ditutup)) · (\d+) dagangan Auto sejak (.+) · kos ([\d.]+)% pergi-balik$/,(m,a,b,c,d,e)=>`${a?`Room for ${a} more position(s)`:'Capital fully used: robot waits for positions to close'} · ${c} Auto trades since ${trText(d)} · ${e}% round-trip cost`],
+[/^Hidup · (.*) · untung ([\d.]+)%$/,(m,a,b)=>`On · ${trText(a)} · take profit ${b}%`],
 [/^Carta 1 jam · (\S+) pada (.+) \(terkini\)$/,(m,b,c)=>`1-hour chart · ${b} at ${trText(c)} (latest)`],
 [/^Strategi Isyarat aktif \(RSI 2\): purata ([+\-−]?[\d.]+)% dalam backtest \(kos ([\d.]+)%\)\. Dengan kos anda ([\d.]+)%, jangkaan purata$/,'Active-signal strategy (RSI 2): average $1% in the backtest ($2% cost). With your $3% cost, the expected average is'],
 [/^backtest, kos ([\d.]+)%$/,'backtest, $1% cost'],
@@ -2533,7 +2540,7 @@ function sheetStatHTML(code,A){
   let so=bestOp(code);
   if(!so){const sg=signalFor(code),now=m.c;if(sg&&now!=null&&now<sg.tg&&now>sg.sl&&tdBetween(sg.start,S.market.meta.asof)<=BTH().h)so=sg;}
   const R=so?rateSignal(so):null,V=scoreVerdict(sc,va);
-  return `<div class="hstat" style="margin:10px 0 0"><span><small>Isyarat</small>${R?`<span class="badge ${R.cls}">${R.lbl}</span>`:`<span class="badge b-na">Tiada isyarat aktif</span>`}</span>${V?`<span><small>Skor teknikal${h1?' 1J':''} ${sc}/${va}</small><span class="badge ${V.cls}">${V.lbl}</span></span>`:''}${so&&isChamp(so,code)?`<span><small>&nbsp;</small><span class="badge b-gold">🏆 Champion</span></span>`:''}<button class="sinfo" onclick="openStatusHelp()" aria-label="Maksud status">ⓘ</button></div>`;
+  return `<div class="hstat" style="margin:10px 0 0"><span><small>Isyarat</small>${R?`<span class="badge ${R.cls}">${R.lbl}</span>`:`<span class="badge b-na">Tiada isyarat aktif</span>`}</span>${V?`<span><small>Skor teknikal${h1?' 1J':''} ${sc}/${va}</small><span class="badge ${V.cls}">${V.lbl}</span></span>`:''}<button class="sinfo" onclick="openStatusHelp()" aria-label="Maksud status">ⓘ</button></div>`;
 }
 /* ===== Platform luar (pautan sahaja — ProCoin kekal app indicator) ===== */
 const PLATFORMS=[
@@ -2615,7 +2622,7 @@ function analysisHTML(code,A){
   const nm=nameOf(code),st=status(code,nm),m=mk(code);
   let so=bestOp(code);if(!so){const sg=signalFor(code);if(sg&&m&&m.c!=null&&m.c<sg.tg&&m.c>sg.sl&&tdBetween(sg.start,S.market.meta.asof)<=BTH().h)so=sg;}
   if(so&&!so.start&&m)so={...so,start:subTradingDays(m.d,so.ago||0)};
-  const h1=A&&A.tf==='1 jam'&&A.valid,SC=h1?A.score:m&&m.sc,VA=h1?A.valid:m&&m.va;const R=so?rateSignal(so):null,V=VA?scoreVerdict(SC,VA):null,champ=so&&isChamp(so,code);
+  const h1=A&&A.tf==='1 jam'&&A.valid,SC=h1?A.score:m&&m.sc,VA=h1?A.valid:m&&m.va;const R=so?rateSignal(so):null,V=VA?scoreVerdict(SC,VA):null;
   const N=newsFor(code),np=N.filter(x=>x.x==='+').length,nn=N.filter(x=>x.x==='-').length;
   // Kesimpulan
   let ks;
@@ -2626,7 +2633,7 @@ function analysisHTML(code,A){
   else ks='Tiada isyarat aktif dan trend semasa tidak kuat. Tiada bacaan positif buat masa ini.';
   const ns=N.length?`Berita 30 hari: ${N.length} tajuk (${np} positif, ${nn} negatif).`:'';
   let h=meterHTML(code,true)+`<div class="verd"><b>Kesimpulan</b><p style="margin:4px 0 0">${esc(ks)}</p>${ns?`<p style="margin:4px 0 0">${esc(ns)}</p>`:''}</div>`;
-  h+=`<div class="hstat" style="margin:12px 0 4px">${badge(st)}${st==='no'?'':R?`<span class="badge ${R.cls}">${R.lbl}</span>`:'<span class="badge b-na">Tiada isyarat aktif</span>'}${V&&st!=='no'?`<span class="badge ${V.cls}">Skor ${SC}/${VA} · ${V.lbl.split(' –')[0]}</span>`:''}${champ&&st!=='no'?'<span class="badge b-gold">🏆 Champion</span>':''}</div>`;
+  h+=`<div class="hstat" style="margin:12px 0 4px">${badge(st)}${st==='no'?'':R?`<span class="badge ${R.cls}">${R.lbl}</span>`:'<span class="badge b-na">Tiada isyarat aktif</span>'}${V&&st!=='no'?`<span class="badge ${V.cls}">Skor ${SC}/${VA} · ${V.lbl.split(' –')[0]}</span>`:''}</div>`;
   // Isyarat
   if(so&&st!=='no'){const md=Math.max(1,Math.round(so.md||0)),tp=(so.tg/so.en-1)*100,sp=(1-so.sl/so.en)*100;
     h+=`<h3>Isyarat</h3><div class="card" style="margin:0">
@@ -2715,14 +2722,14 @@ function download(name,content,type){
 const ONB=[
  ['🪙',{bm:['Selamat datang ke ProCoin','App indicator untuk <b>coin crypto besar</b> (BTC, ETH, XRP, SOL dan lain-lain).<ul><li>Harga, isyarat teknikal & berita dikemas kini <b>automatik</b> setiap hari.</li><li>Anda hanya baca & nilai keputusan.</li><li>Ini bacaan indicator, <b>bukan</b> cadangan beli atau jual. Crypto sangat turun naik.</li></ul>'],
         en:['Welcome to ProCoin','An indicator app for <b>large crypto coins</b> (BTC, ETH, XRP, SOL and more).<ul><li>Prices, technical signals & news update <b>automatically</b> every day.</li><li>You just read & judge the results.</li><li>These are indicator readings, <b>not</b> buy or sell recommendations. Crypto is very volatile.</li></ul>']}],
- ['🟢',{bm:['Cara baca isyarat','<ul><li><b>Isyarat Kuat</b> — corak yang paling kerap berjaya dalam sejarah coin itu. Senarai utama hanya tunjuk ini.</li><li><b>%</b> — peluang harga sampai <b>sasaran</b> dahulu sebelum <b>cut loss</b>.</li><li><b>Tempoh biasa</b> — berapa hari biasanya ambil masa.</li><li><b>Meter</b> — gabungan isyarat, trend & berita (Lemah → Sangat Kuat).</li><li>Tekan <b>📝 Ringkasan analisa</b> untuk semua maklumat dalam satu skrin.</li></ul>'],
-        en:['How to read signals','<ul><li><b>Strong signal</b> — the pattern that most often worked in that coin\'s history. The main list shows only these.</li><li><b>%</b> — chance price reaches the <b>target</b> before the <b>cut loss</b>.</li><li><b>Typical period</b> — how many days it usually takes.</li><li><b>Meter</b> — signal, trend & news combined (Weak → Very Strong).</li><li>Tap <b>📝 Analysis summary</b> for everything on one screen.</li></ul>']}],
+ ['🟢',{bm:['Cara baca isyarat','<ul><li><b>Isyarat aktif</b> — strategi RSI 2 (lantunan dalam trend naik) yang lulus backtest 5 tahun.</li><li><b>Isyarat Pemerhatian</b> — Breakout 20 hari (ikut trend).</li><li><b>%</b> — berapa kerap strategi itu untung dalam backtest, dan purata untung selepas kos.</li><li><b>Meter</b> — gabungan isyarat, trend & berita (Lemah → Sangat Kuat).</li><li>Tekan <b>📝 Ringkasan analisa</b> untuk semua maklumat dalam satu skrin.</li></ul>'],
+        en:['How to read signals','<ul><li><b>Active signal</b> — the RSI 2 strategy (bounce in an uptrend) that passed a 5-year backtest.</li><li><b>Watch signal</b> — 20-day Breakout (trend following).</li><li><b>%</b> — how often the strategy was profitable in the backtest, and its average profit after costs.</li><li><b>Meter</b> — signal, trend & news combined (Weak → Very Strong).</li><li>Tap <b>📝 Analysis summary</b> for everything on one screen.</li></ul>']}],
  ['📰',{bm:['Berita crypto','<ul><li><b>📰 Berita crypto terkini</b> di skrin utama: tajuk terbaru semua coin, dengan tanda ▲ positif, ▼ negatif.</li><li><b>Berita Berpotensi</b>: coin dengan berita positif hari ini.</li><li>Nada berita juga dikira dalam <b>Meter</b> setiap coin.</li><li>Berita negatif untuk coin anda muncul dalam loceng 🔔.</li></ul>'],
         en:['Crypto news','<ul><li><b>📰 Latest crypto news</b> on the home screen: the newest headlines for every coin, marked ▲ positive, ▼ negative.</li><li><b>Potential news</b>: coins with positive news today.</li><li>News tone also counts in each coin\'s <b>Meter</b>.</li><li>Negative news for your coins appears in the bell 🔔.</li></ul>']}],
- ['🤖',{bm:['Uji dengan Robot','<ul><li><b>M (Manual)</b>: buka mana-mana coin → tekan <b>✍️ Manual</b> → uji dengan wang maya (contoh $20).</li><li><b>A (Auto)</b>: di tab Robot, tekan butang <b>Robot Auto</b> → robot masuk sendiri setiap pagi.</li><li>Robot tutup bila sampai sasaran, cut loss atau 30 hari.</li><li>Semua data disimpan dalam telefon ini.</li></ul>'],
-        en:['Test with the Robot','<ul><li><b>M (Manual)</b>: open any coin → tap <b>✍️ Manual</b> → test with virtual money (e.g. $20).</li><li><b>A (Auto)</b>: in the Robot tab, tap the <b>Auto Robot</b> button → the robot enters by itself every morning.</li><li>The robot closes at the target, the cut loss or after 30 days.</li><li>All data is stored on this phone.</li></ul>']}],
- ['🧰',{bm:['Tab dalam app','<ul><li><b>🪙 Coin</b>: graf 1 jam, Bitcoin (harga & berita terkini), isyarat aktif, Berita Berpotensi, Isyarat Pemerhatian dan semua coin.</li><li><b>📰 News</b>: semua berita crypto dengan tanda ▲ ▼.</li><li><b>🔥 G & L</b>: coin paling banyak naik & turun (hari ini, 7 hari, 30 hari).</li><li><b>🤖 Robot</b>: ujian maya Manual & Auto.</li></ul>'],
-        en:['Tabs in the app','<ul><li><b>🪙 Coin</b>: 1-hour chart, Bitcoin (latest price & news), active signals, Potential news, Watch signals and all coins.</li><li><b>📰 News</b>: all crypto news marked ▲ ▼.</li><li><b>🔥 G & L</b>: coins that rose & fell the most (today, 7 days, 30 days).</li><li><b>🤖 Robot</b>: Manual & Auto virtual tests.</li></ul>']}]];
+ ['🤖',{bm:['Uji dengan Robot','<ul><li><b>M (Manual)</b>: buka mana-mana coin → tekan <b>✍️ Manual</b> → uji dengan wang maya (contoh $20).</li><li><b>A (Auto)</b>: di tab Robot, tekan butang <b>Robot Auto</b> → robot masuk sendiri setiap pagi.</li><li>Robot tutup ikut peraturan strategi (EMA5 / trailing stop / cut loss), atau anda tutup sendiri.</li><li>Pilih platform & kos dagangan sebenar dalam Robot Auto.</li><li>Semua data disimpan dalam telefon ini.</li></ul>'],
+        en:['Test with the Robot','<ul><li><b>M (Manual)</b>: open any coin → tap <b>✍️ Manual</b> → test with virtual money (e.g. $20).</li><li><b>A (Auto)</b>: in the Robot tab, tap the <b>Auto Robot</b> button → the robot enters by itself every morning.</li><li>The robot closes by the strategy rules (EMA5 / trailing stop / cut loss), or you close it yourself.</li><li>Choose your platform & real trading costs in Auto Robot.</li><li>All data is stored on this phone.</li></ul>']}],
+ ['🧰',{bm:['Tab dalam app','<ul><li><b>🪙 Coin</b>: graf 1 jam, Bitcoin (harga & berita terkini), isyarat aktif, Berita Berpotensi, Isyarat Pemerhatian dan semua coin.</li><li><b>📰 News</b>: semua berita crypto dengan tanda ▲ ▼.</li><li><b>🔥 G & L</b>: coin paling banyak naik & turun (hari ini, 7 hari, 30 hari).</li><li><b>🤖 Robot</b>: ujian maya Manual & Auto, dengan kos dagangan sebenar.</li></ul>'],
+        en:['Tabs in the app','<ul><li><b>🪙 Coin</b>: 1-hour chart, Bitcoin (latest price & news), active signals, Potential news, Watch signals and all coins.</li><li><b>📰 News</b>: all crypto news marked ▲ ▼.</li><li><b>🔥 G & L</b>: coins that rose & fell the most (today, 7 days, 30 days).</li><li><b>🤖 Robot</b>: Manual & Auto virtual tests, with real trading costs.</li></ul>']}]];
 function openOnboard(i){i=i||0;const old=$('#onb');if(old)old.remove();const d=document.createElement('div');d.className='help';d.id='onb';document.body.classList.add('ovl');
   const ic=ONB[i][0],[t,b]=ONB[i][1][S.settings.lang==='en'?'en':'bm'];
   d.innerHTML=`<div class="help-p onb" role="dialog" aria-modal="true"><div class="onbic">${ic}</div><h2>${t}</h2><div class="onbb">${b}</div>
