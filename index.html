@@ -405,6 +405,7 @@ canvas#cv{touch-action:pan-y;cursor:crosshair}
 .fchips{display:inline-flex;gap:4px;margin-top:4px}.fchip{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--card2);color:var(--muted)}.fchip.ok{color:var(--green)}.fchip.no{color:var(--red)}
 .frow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.frow .fic{width:20px;text-align:center;font-weight:800}.frow .fl{flex:1;min-width:0}.frow b{text-align:right}
 .plan b.tx{font-size:14px!important;line-height:1.3}
+.ckrt{font-size:22px;font-weight:800;padding:8px 0}
 .rtab{overflow-x:auto;margin:10px 0}.rtab table{width:100%;border-collapse:collapse;font-size:12.5px}.rtab th{color:var(--muted);font-weight:600;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}.rtab th:first-child,.rtab td:first-child{text-align:left}
 .rtab td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}.rtab td small{display:block;color:var(--muted);font-size:10.5px}.rtab tr.rb td{font-weight:700;background:var(--card2)}
 /* ProCoin: rel kad dipaparkan penuh dalam grid (tiada skrol ke tepi) */
@@ -428,9 +429,9 @@ canvas#cv{touch-action:pan-y;cursor:crosshair}
 <main id="main"></main>
 <nav id="nav">
   <button data-tab="coin" class="on"><span class="ic">🪙</span>Coin</button>
+  <button data-tab="robot"><span class="ic">🤖</span>Robot</button>
   <button data-tab="news"><span class="ic">📰</span>News</button>
   <button data-tab="gl"><span class="ic">🔥</span>G &amp; L</button>
-  <button data-tab="robot"><span class="ic">🤖</span>Robot</button>
   <button data-tab="tetapan"><span class="ic">⚙️</span>Tetapan</button>
 </nav>
 <div class="sheet" id="sheet"><div class="panel" id="sheetBody"></div></div>
@@ -580,11 +581,25 @@ const INTRA={};
 async function getIntra(code){if(INTRA[code])return INTRA[code];
   const r=await dfetch('i/'+encodeURIComponent(code)+'.json?v='+((S.market&&S.market.meta.generated)||today()));if(!r.ok)throw new Error('Tiada data 30 minit');
   const j=await r.json();const bars=j.t.map((d,i)=>({d,o:j.o[i],h:j.h[i],l:j.l[i],c:j.c[i],v:j.v[i]})).filter(b=>b.c>0);INTRA[code]=bars;return bars;}
+/* Bar 1 jam terkini: Binance data awam (tanpa akaun), 300 jam terakhir, cache 5 minit.
+   Jika gagal: gabung data 30 minit dari GitHub (dikemas kini harian). */
+const H1C={};
+function myt(ms){const d=new Date(ms+8*3600e3);return d.toISOString().slice(0,16).replace('T',' ');}
+async function getH1(code){const C=H1C[code];if(C&&Date.now()-C.at<300e3)return C.bars;
+  const sym=code+'USDT';
+  for(const host of ['https://data-api.binance.vision','https://api.binance.com']){
+    try{const ac=new AbortController();const to=setTimeout(()=>ac.abort(),8000);
+      const r=await fetch(`${host}/api/v3/klines?symbol=${sym}&interval=1h&limit=300`,{signal:ac.signal});clearTimeout(to);if(!r.ok)continue;
+      const j=await r.json();if(!Array.isArray(j)||j.length<30)continue;
+      const bars=j.map(k=>({d:myt(k[0]),o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[7]})).filter(b=>b.c>0);
+      H1C[code]={at:Date.now(),bars,live:1};return bars;}catch(e){}}
+  const bars=aggBars(await getIntra(code),d=>d.slice(0,13));H1C[code]={at:Date.now(),bars,live:0};return bars;}
+function h1Live(code){return !!(H1C[code]&&H1C[code].live);}
 const TFS=[['30m','30m'],['1j','1J'],['12j','12J'],['D','Hari'],['W','Minggu'],['M','Bulan'],['Y','Tahun']];
 function hasIntra(code){return !!(S.intra&&S.intra.includes(code));}
 async function chartFor(code,tf){
   if(tf==='30m')return analyze(await getIntra(code),'30 minit');
-  if(tf==='1j')return analyze(aggBars(await getIntra(code),d=>d.slice(0,13)),'1 jam');
+  if(tf==='1j')return analyze(await getH1(code),'1 jam');
   if(tf==='12j')return analyze(aggBars(await getIntra(code),d=>d.slice(0,10)+(+d.slice(11,13)<13?' 09:00':' 14:30')),'Sesi');
   const b=await getBars(code);
   if(tf==='W')return analyze(weekly(b),'Mingguan');
@@ -700,7 +715,8 @@ function stratCard(code,op,m){const RS=rateSignal({...op,code});const SG=stratOf
     <div><span>${op.ago?'Harga masuk':'Harga semasa'}</span><b>${px(op.en)}</b>${op.ago&&now?`<small>kini ${px(now)} (${((now/op.en-1)*100).toFixed(1)}%)</small>`:''}</div>
     <div><span>Keluar (untung)</span><b class="up tx">${exitTxt}</b></div>
     <div><span>${op.st==='brk20'&&op.ago?'Trailing stop kini':'Cut loss'}</span><b class="dn">${px(op.sl)} <small>${sp>=0?'−':'+'}${Math.abs(sp).toFixed(1)}%</small></b></div>
-    <div><span>Purata setiap dagangan</span><b class="${op.ev>=0?'up':'dn'}">${op.ev>0?'+':''}${op.ev}%</b><small>selepas kos ${(BTH().fee*100).toFixed(1)}%</small></div>
+    <div><span>Purata setiap dagangan</span><b class="${op.ev>=0?'up':'dn'}">${op.ev>0?'+':''}${op.ev}%</b><small>backtest, kos ${(BTH().fee*100).toFixed(1)}%</small></div>
+    <div><span>Selepas kos platform anda</span><b class="${netEV(op.ev)>0?'up':'dn'}">${netEV(op.ev)>0?'+':''}${netEV(op.ev)}%</b><small>${esc(costLabel())} · ${(costRT()*100).toFixed(2)}% pergi-balik</small></div>
     <div><span>Tempoh biasa (untung)</span><b>${op.md!=null?Math.round(op.md)+' hari':'-'}</b><small>${op.d25!=null?`biasanya ${op.d25}–${op.d75} hari · had ${SG.max||'-'} hari`:''}</small></div>
     <div><span>Bukti sejarah</span><b>${op.n} dagangan; ${op.w} untung</b><small>keyakinan ${op.cf||'-'}</small></div>
    </div><p class="muted" style="font-size:12px;margin:8px 0 0">${esc(op.rule||SG.rule||'')}</p></div>`;}
@@ -1123,13 +1139,13 @@ function autoRun(){const a=AUTO();if(!a.on||!S.market)return 0;S.manual=S.manual
   const size=()=>{if(free==null)return +a.stake||20;const per=Math.round(eq/5*100)/100;const amt=free>=per?per:(free>=per*.5?Math.round(free*100)/100:null);if(amt!=null)free-=amt;return amt;};
   const r6=v=>+(+v).toPrecision(6),now=new Date().toISOString(),add=[];
   if(a.sig){const L=[];Object.entries(M.stocks).forEach(([c,v])=>{if(!v.op||v.liq===0||!v.c)return;let best=null;
-      v.op.forEach(o=>{const SG=stratOf(o.k);if((o.ago||0)!==0||!(o.ev>0)||!o.en||!SG||SG.grade!=='A'||filterFails(c).length)return;if(!best||o.ev>best.e)best={e:o.ev,o};});
+      v.op.forEach(o=>{const SG=stratOf(o.k);if((o.ago||0)!==0||!(o.ev>0)||!(netEV(o.ev)>0)||!o.en||!SG||SG.grade!=='A'||filterFails(c).length)return;if(!best||o.ev>best.e)best={e:o.ev,o};});
       if(best)L.push({code:c,name:v.n,c:v.c,o:best.o,e:best.e});});
     L.sort((x,y)=>y.e-x.e).forEach(x=>{const id=`auto-${x.code}-${asof}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
-      add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(x.c),stake:amt,tg:r6(x.o.tg),sl:r6(x.o.sl),st:x.o.st,atr:x.o.atr,hz:stratOf(x.o.k).max||null,md:x.o.md?Math.round(x.o.md):null,at:now});have.add(x.code);});}
+      add.push({id,src:'A',why:'sig',inc:1,code:x.code,name:x.name,d:entryDate(asof),en:r6(x.c),stake:amt,tg:r6(x.o.tg),sl:r6(x.o.sl),st:x.o.st,atr:x.o.atr,hz:stratOf(x.o.k).max||null,md:x.o.md?Math.round(x.o.md):null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});}
   if(a.news)potNews().forEach(x=>{const m=mk(x.code);if(!m||m.liq===0||!m.c)return;const id=`auto-${x.code}-n${x.n.d}`;if(have.has(x.code)||ids.has(id))return;const amt=size();if(amt==null)return;
     const c=nowPx(x.code)||m.c,at=S.cache[x.code]&&S.cache[x.code].atr,sp=at?Math.min(Math.max(1.25*at/c,.02),.25):.05;
-    add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,at:now});have.add(x.code);});
+    add.push({id,src:'A',why:'news',inc:1,code:x.code,name:m.n,d:today(),en:r6(c),stake:amt,tg:r6(c*(1+tpp/100)),sl:r6(c*(1-sp)),tp:tpp,md:null,fs:costSide(),cl:costLabel(),at:now});have.add(x.code);});
   if(add.length){S.manual.push(...add);S.autoIn={at:now,n:add.length,names:add.map(p=>shortName(p.name)),id:add[0].id};save();Promise.allSettled(add.map(p=>getBars(p.code))).then(()=>{manRefresh();if(TAB==='robot')rRobot();});}
   return add.length;}
 function bindAuto(){const b=$('#auBtn');if(b)b.onclick=openAuto;}
@@ -1156,7 +1172,32 @@ function manEval(p){
     if(b.h>=p.tg)return {res:'W',exit:p.tg,end:b.d,days:i+1};}
   if(after.length>=H){const b=after[H-1];return {res:'T',exit:b.c,end:b.d,days:H};}
   return null;}
-function manPnl(p,exit){return (exit/p.en-1-BTH().fee)*p.stake;}
+/* ===== KOS DAGANGAN SEBENAR (platform berdaftar SC) =====
+   Yuran awam (disemak 2026, peringkat runcit / volum 30 hari rendah). Robot beli & jual dengan order pasaran (taker),
+   atau Instant Buy. Spread/slippage = perbezaan harga bila order pasaran dipadankan. Semak skrin yuran platform anda. */
+const PLATFORM_FEES={
+  hata:{n:'HATA',taker:0.40,instant:1.0,note:'Exchange: maker 0%, taker 0.10–0.40% ikut volum 30 hari. Instant Buy/Sell 1%.'},
+  luno:{n:'Luno',taker:0.50,instant:2.0,note:'Exchange: taker 0.25–0.50% ikut volum 30 hari. Instant Buy/Sell 2%.'},
+  custom:{n:'Kos sendiri',taker:0.40,instant:1.0,note:'Masukkan yuran setiap transaksi (beli ATAU jual) ikut skrin yuran platform anda.'}};
+function COST(){const d={pf:'hata',mode:'taker',slip:0.10,custom:0.40};const x=S.settings.cost||(S.settings.cost={});for(const k in d)if(!(k in x))x[k]=d[k];return x;}
+/* yuran satu transaksi (beli ATAU jual), pecahan */
+function costSide(){const c=COST(),P=PLATFORM_FEES[c.pf]||PLATFORM_FEES.hata;const fee=c.pf==='custom'?num(c.custom):(c.mode==='instant'?P.instant:P.taker);return Math.max(0,(fee+num(c.slip))/100);}
+function costRT(){return costSide()*2;}
+function costLabel(){const c=COST(),P=PLATFORM_FEES[c.pf]||PLATFORM_FEES.hata;return c.pf==='custom'?`Kos sendiri ${num(c.custom)}%`:`${P.n} ${c.mode==='instant'?'Instant Buy':'Exchange (order pasaran)'}`;}
+/* jangkaan purata strategi selepas kos platform pengguna (backtest guna kos 0.2% pergi-balik) */
+function netEV(ev){return ev==null?null:Math.round((ev+BTH().fee*100-costRT()*100)*100)/100;}
+function manPnl(p,exit){const f=p.fs!=null?p.fs:BTH().fee/2;const units=p.stake*(1-f)/p.en;return units*exit*(1-f)-p.stake;}
+function costCardHTML(){const c=COST(),rt=costRT()*100,sg=stratOf('rsi2'),ne=sg?netEV(sg.ev):null;
+  return `<div class="card"><h2>💸 Kos dagangan sebenar</h2>
+   <p class="muted" style="margin-top:0;font-size:13px">Robot kira untung/rugi seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.</p>
+   <div class="grid2"><div><label>Platform</label><select id="ckPf">${Object.entries(PLATFORM_FEES).map(([k,v])=>`<option value="${k}"${c.pf===k?' selected':''}>${v.n}</option>`).join('')}</select></div>
+   ${c.pf==='custom'?`<div><label>Yuran setiap transaksi (%)</label><input id="ckCu" inputmode="decimal" value="${c.custom}"></div>`:`<div><label>Jenis order</label><select id="ckMd"><option value="taker"${c.mode==='taker'?' selected':''}>Exchange</option><option value="instant"${c.mode==='instant'?' selected':''}>Instant Buy/Sell</option></select></div>`}</div>
+   <div class="grid2" style="margin-top:8px"><div><label>Spread / slippage (%)</label><input id="ckSl" inputmode="decimal" value="${c.slip}"></div><div><label>Jumlah kos pergi-balik</label><div class="ckrt">${rt.toFixed(2)}%</div></div></div>
+   <p class="muted" style="font-size:12px;margin:8px 0 0">${esc((PLATFORM_FEES[c.pf]||{}).note||'')}</p>
+   ${ne!=null?`<div class="alert ${ne>0?'a-green':'a-red'}" style="margin:10px 0 0">Strategi Isyarat aktif (RSI 2): purata ${sg.ev>0?'+':''}${sg.ev}% dalam backtest (kos 0.2%). Dengan kos anda ${rt.toFixed(2)}%, jangkaan purata <b>${ne>0?'+':''}${ne}%</b> setiap dagangan.${ne>0?'':' Robot Auto tidak akan masuk kerana kos melebihi kelebihan strategi. Kurangkan kos (contohnya order had / maker) atau pilih platform lebih murah.'}</div>`:''}</div>`;}
+function bindCost(){const c=COST();const up=()=>{save();rRobot();};
+  const a=$('#ckPf');if(a)a.onchange=e=>{c.pf=e.target.value;up();};const b=$('#ckMd');if(b)b.onchange=e=>{c.mode=e.target.value;up();};
+  const s=$('#ckSl');if(s)s.onchange=e=>{c.slip=Math.max(0,Math.min(5,num(e.target.value)));up();};const u=$('#ckCu');if(u)u.onchange=e=>{c.custom=Math.max(0,Math.min(5,num(e.target.value)));up();};}
 function manRefresh(){setTimeout(robotStateSync,0);let ch=false;(S.manual||[]).forEach(p=>{if(p.closed)return;const r=manEval(p);if(r){p.closed=r;ch=true;}});if(ch)save();}
 function openManual(code){
   code=code||'';const nm=nameOf(code);const m=mk(code);const P=manOpen(code);
@@ -1186,14 +1227,14 @@ function openManual(code){
     $('#mxDel').onclick=()=>{manDelete(P.id);toast('Dipadam');after();};}
   else $('#mGo').onclick=()=>{const st=num($('#mS').value),en=num($('#mE').value),tg=num($('#mT').value),sl=num($('#mL').value),dt=$('#mD').value;
     if(!(st>0&&en>0))return toast('Masukkan nilai maya dan harga masuk');if(!(tg>en&&sl<en&&sl>0))return toast('Paras atas mesti lebih tinggi dan paras bawah lebih rendah daripada harga masuk');
-    const sg=signalFor(code);S.manual=S.manual||[];S.manual.push({id:uid(),inc:1,at:new Date().toISOString(),code,name:nm,d:dt||today(),en,stake:st,tg,sl,md:sg&&sg.md?Math.round(sg.md):null,...(sg&&sg.st?{st:sg.st,atr:sg.atr,hz:(stratOf(sg.k)||{}).max||null}:{})});
+    const sg=signalFor(code);S.manual=S.manual||[];S.manual.push({id:uid(),inc:1,at:new Date().toISOString(),code,name:nm,d:dt||today(),en,stake:st,tg,sl,md:sg&&sg.md?Math.round(sg.md):null,...(sg&&sg.st?{st:sg.st,atr:sg.atr,hz:(stratOf(sg.k)||{}).max||null}:{}),fs:costSide(),cl:costLabel()});
     save();toast('Ditambah ke Robot Manual');getBars(code).catch(()=>{});close();closeSheet();goTab('robot');};
 }
 function mtag(p){return p.src==='A'?'<span class="mtag a">A</span>':'<span class="mtag m">M</span>';}
 function manRow(p){const nm=shortName(p.name||nameOf(p.code));const m=mk(p.code),now=nowPx(p.code);
-  if(p.closed){const C=p.closed,r=RES3[C.res],u=manPnl(p,C.exit),xp=p.qty?u/p.stake*100:(C.exit/p.en-1)*100;
+  if(p.closed){const C=p.closed,r=RES3[C.res],u=manPnl(p,C.exit),xp=u/p.stake*100;
     return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span></span><span class="mnow"><small>Harga kini</small><b>${now?px(now):'-'}</b><em class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</em></span></div></div>`;}
-  const u=now?manPnl(p,now):null;let pct=now?(p.qty&&u!=null?u/p.stake*100:(now/p.en-1)*100):null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
+  const u=now?manPnl(p,now):null;let pct=u!=null?u/p.stake*100:null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
   return `<div class="mrow mc" data-mid="${esc(p.id)}" role="button"><div class="mhd" style="margin:0"><span>${mtag(p)}<b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span>${p.src==='A'&&p.why?`<br><small class="muted">${{sig:'🟢 Isyarat Kuat',champ:'🏆 Champion',news:'📰 Berita'}[p.why]||''}</small>`:''}</span><span class="mnow"><small>Harga kini</small><b class="${pc}">${now?px(now):'-'}</b>${u==null?'':`<em class="${u>=0?'up':'dn'}">${rmS(u)} (${pct>0?'+':''}${pct.toFixed(1)}%)</em>`}</span></div></div>`;}
 function openManDetail(id){const p=(S.manual||[]).find(x=>x.id===id);if(!p)return;
   const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
@@ -1206,41 +1247,42 @@ function openManDetail(id){const p=(S.manual||[]).find(x=>x.id===id);if(!p)retur
     if(e.target===d)close();};
   $('#helpX').onclick=close;$('#mdView').onclick=()=>{close();stockSheet(p.code,nameOf(p.code));};}
 function manFull(p){const nm=shortName(p.name||nameOf(p.code));
-  if(p.closed){const C=p.closed,r=RES3[C.res];const u=manPnl(p,C.exit),xp=(C.exit/p.en-1)*100;
+  if(p.closed){const C=p.closed,r=RES3[C.res];const u=manPnl(p,C.exit),xp=u/p.stake*100;
     const m=mk(p.code),now=nowPx(p.code),since=now?(now/C.exit-1)*100:null,sc=since==null||Math.abs(since)<0.05?'':since>0?'up':'dn';
     const cell=(l,v,c='')=>`<div><span>${l}</span><b class="${c}">${v}</b></div>`;
     return `<div class="mrow" data-code="${esc(p.code)}" role="button">
     <div class="mhd"><span><b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span><br><span class="badge ${r[2]}" style="margin-top:4px">${r[0]}</span></span><span class="mnow"><small>Harga kini</small><b class="${sc}">${now?px(now):'-'}</b>${since==null?'':`<em class="${sc}">${since>0?'+':''}${since.toFixed(1)}% sejak ditutup</em>`}</span></div>
     <div class="mgrid">${cell('Harga masuk',px(p.en))}${cell('Harga tutup',px(C.exit),xp>=0?'up':'dn')}${cell('Masa beli',manStartTxt(p))}${cell('Masa tutup',`${C.at?fmtDT(C.at):fmtD(C.end<p.d?p.d:C.end)} (${Math.max(0,C.days)} hari)`)}<div class="mw"><span>Keputusan</span><b class="${u>=0?'up':'dn'}">${rmS(u)} (${xp>0?'+':''}${xp.toFixed(1)}%)</b></div></div>
-    <div class="mft"><span class="muted" style="font-size:12px">${rm(p.stake)} nilai maya · sasaran ${px(p.tg)} · cut loss ${px(p.sl)}</span><button class="mdel" data-md="${esc(p.id)}" aria-label="Padam">🗑</button></div></div>`;}
-  const m=mk(p.code),now=nowPx(p.code),u=now?manPnl(p,now):null,H=BTH().h;let pct=now?(p.qty&&u!=null?u/p.stake*100:(now/p.en-1)*100):null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
+    <div class="mft"><span class="muted" style="font-size:12px">${rm(p.stake)} nilai maya · kos ${((p.fs!=null?p.fs:BTH().fee/2)*200).toFixed(2)}% pergi-balik${p.cl?` (${esc(p.cl)})`:''}</span><button class="mdel" data-md="${esc(p.id)}" aria-label="Padam">🗑</button></div></div>`;}
+  const m=mk(p.code),now=nowPx(p.code),u=now?manPnl(p,now):null,H=BTH().h;let pct=u!=null?u/p.stake*100:null;if(pct!=null&&Math.abs(pct)<0.05)pct=0;const pc=pct==null||pct===0?'':pct>0?'up':'dn';
   const cell=(l,v,c='',w='')=>`<div${w?' class="mw"':''}><span>${l}</span><b class="${c}">${v}</b></div>`;
   return `<div class="mrow" data-code="${esc(p.code)}" role="button">
     <div class="mhd"><span><b>${esc(nm)}</b> <span class="code">${esc(p.code)}</span></span><span class="mnow"><small>Harga kini</small><b class="${pc}">${now?px(now):'-'}</b>${u==null?'':`<em class="${u>=0?'up':'dn'}">${rmS(u)} (${pct>0?'+':''}${pct.toFixed(1)}%)</em>`}</span></div>
-    <div class="mgrid">${cell('Harga masuk',px(p.en))}${p.qty?cell('Unit · kos+yuran',p.qty+' · '+rm(p.stake)):cell('Nilai maya',rm(p.stake))}${cell('Sasaran',px(p.tg)+(p.tp?` (+${p.tp}%)`:''),'up')}${cell('Cut loss',px(p.sl),'dn')}
+    <div class="mgrid">${cell('Harga masuk',px(p.en))}${p.qty?cell('Unit · kos+yuran',p.qty+' · '+rm(p.stake)):cell('Nilai maya',rm(p.stake))}${p.st==='rsi2'?cell('Keluar','Tutup atas EMA5','up'):p.st==='brk20'?cell('Trailing stop kini',px(p.trail||p.sl),'dn'):cell('Sasaran',px(p.tg)+(p.tp?` (+${p.tp}%)`:''),'up')}${p.st==='brk20'?cell('Stop awal',px(p.sl),'dn'):cell('Cut loss',px(p.sl),'dn')}${cell('Kos pergi-balik',((p.fs!=null?p.fs:BTH().fee/2)*200).toFixed(2)+'%'+(p.cl?` · ${esc(p.cl)}`:''))}
       ${cell('Masa beli',manStartTxt(p))}${p.hz?cell('Tutup automatik',fmtD(addTradingDays(p.d,p.inc?p.hz-1:p.hz))):cell('Tamat tempoh biasa',p.md?fmtD(addTradingDays(p.d,p.inc?p.md-1:p.md)):'-')}</div>
     <div class="mft">${statusHTML(p.code,nameOf(p.code),true).replace(/<span class="s-warn">(✍️|🤖)[^]*?<\/span>/g,'').replace(/ · bermula [^<]*? hingga [^<]*?(?= <button)/g,'')}<span class="row" style="gap:6px;flex:none"><button class="btn sm sec" data-mx="${esc(p.code)}">Urus</button><button class="mdel" data-md="${esc(p.id)}" aria-label="Padam">🗑</button></span></div></div>`;}
 function maSplitHTML(M){const g=k=>M.filter(p=>(p.src==='A')===(k==='A'));const A=g('A'),Mm=g('M');if(!A.length||!Mm.length)return '';
-  const st=L=>{const cl=L.filter(p=>p.closed),w=cl.filter(p=>p.closed.res==='W').length;const pl=L.reduce((t,p)=>{if(p.closed)return t+manPnl(p,p.closed.exit);const m=mk(p.code);return t+(m&&m.c?manPnl(p,m.c):0);},0);return {n:L.length,acc:cl.length?Math.round(w/cl.length*100)+'%':'-',pl};};
+  const st=L=>{const cl=L.filter(p=>p.closed),w=cl.filter(p=>p.closed.res==='W').length;const pl=L.reduce((t,p)=>{if(p.closed)return t+manPnl(p,p.closed.exit);const n=nowPx(p.code);return t+(n?manPnl(p,n):0);},0);return {n:L.length,acc:cl.length?Math.round(w/cl.length*100)+'%':'-',pl};};
   const a=st(A),m=st(Mm);
   return `<table class="cmpt" style="margin-top:12px"><tr><th>Manual vs Auto</th><th><span class="mtag m">M</span></th><th><span class="mtag a">A</span></th></tr><tr><td>Bilangan</td><td>${m.n}</td><td>${a.n}</td></tr><tr><td>Ketepatan</td><td>${m.acc}</td><td>${a.acc}</td></tr><tr><td>Untung/rugi</td><td class="${m.pl>=0?'up':'dn'}">${rmS(m.pl)}</td><td class="${a.pl>=0?'up':'dn'}">${rmS(a.pl)}</td></tr></table>`;}
 function rManual(){
   manRefresh();const M=(S.manual||[]).slice();const op=M.filter(p=>!p.closed),cl=M.filter(p=>p.closed).sort((a,b)=>b.closed.end.localeCompare(a.closed.end));
-  const w=cl.filter(p=>p.closed.res==='W').length,pnl=cl.reduce((t,p)=>t+manPnl(p,p.closed.exit),0),opn=op.reduce((t,p)=>{const m=mk(p.code);return t+(m&&m.c?manPnl(p,m.c):0);},0);
+  const w=cl.filter(p=>p.closed.res==='W').length,pnl=cl.reduce((t,p)=>t+manPnl(p,p.closed.exit),0),opn=op.reduce((t,p)=>{const n=nowPx(p.code);return t+(n?manPnl(p,n):0);},0);
   let h=`<div class="card"><h2>🤖 Robot</h2><p class="muted" style="margin-top:0">Senarai coin yang diuji: M = Manual (anda tekan ✍️ Manual pada coin), A = Auto (robot masuk sendiri). Semua ditutup automatik ikut peraturan strategi (EMA5 / trailing stop), cut loss atau had hari.</p>
     <div class="mstat"><div><b>${op.length}</b><span>Sedang diuji</span></div><div><b class="${opn>=0?'up':'dn'}">${rmS(opn)}</b><span>Untung/rugi kini</span></div><div><b>${cl.length?Math.round(w/cl.length*100)+'%':'-'}</b><span>Ketepatan</span></div><div><b class="${pnl>=0?'up':'dn'}">${cl.length?rmS(pnl):'-'}</b><span>Untung/rugi selesai</span></div></div>${maSplitHTML(M)}${M.length?`<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">${cl.length?'<button class="btn sm sec" id="rsClosed">Kosongkan yang selesai</button>':''}<button class="btn sm sec" id="rsAll">↺ Reset semua</button></div>`:''}</div>`;
   h+=autoCardHTML();
+  h+=costCardHTML();
   if(M.length){const cs=cl.slice().sort((a,b)=>a.closed.end.localeCompare(b.closed.end));let cum=0;const first=M.map(p=>p.d).sort()[0];
     const cv=[[first,0],...cs.map(p=>[p.closed.end,cum+=manPnl(p,p.closed.exit)])];if(op.length||cv.length<2)cv.push([today(),cum+opn]);
     h+=`<div class="card"><h2>Graf untung / rugi</h2><p class="muted" style="margin-top:0;font-size:13px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1)}</div>`;}
   if(!M.length)h+=`<div class="card"><p class="muted" style="margin:0">Belum ada coin. Buka mana-mana coin dan tekan butang ✍️ Manual di atas kanan untuk mula ujian.</p></div>`;
   if(op.length)h+=`<div class="card"><h2>Sedang diuji (${op.length})</h2>${op.map(manRow).join('')}</div>`;
   if(cl.length)h+=`<div class="card"><h2>Selesai (${cl.length})</h2>${cl.map(manRow).join('')}</div>`;
-  if(M.length)h+=`<p class="disc" style="margin:6px var(--gut) 0">Ujian maya tanpa wang sebenar, kos dagangan ${(BTH().fee*100).toFixed(1)}% diambil kira. Ini bacaan indicator, bukan cadangan beli atau jual.</p>`;
+  if(M.length)h+=`<p class="disc" style="margin:6px var(--gut) 0">Ujian maya tanpa wang sebenar. Untung/rugi termasuk yuran beli, yuran jual dan spread ikut platform anda (${esc(costLabel())}, ${(costRT()*100).toFixed(2)}% pergi-balik). Ini bacaan indicator, bukan cadangan beli atau jual.</p>`;
   return h;}
 function manReset(ids){const del=new Set(ids);S.manual=(S.manual||[]).filter(p=>!del.has(p.id));S.manDel=[...new Set([...(S.manDel||[]),...ids])].slice(-300);save();rRobot();}
 function confirm2(btn,msg,fn){if(btn.dataset.armed){fn();return;}btn.dataset.armed=1;const t=btn.textContent;btn.textContent=msg;btn.classList.add('red');setTimeout(()=>{if(btn.isConnected){delete btn.dataset.armed;btn.textContent=t;btn.classList.remove('red');}},3500);}
-function bindManual(){bindAuto();
+function bindManual(){bindAuto();bindCost();
   const ra=$('#rsAll');if(ra)ra.onclick=()=>confirm2(ra,'Tekan sekali lagi untuk reset',()=>{manReset((S.manual||[]).map(p=>p.id));toast('Robot Manual direset — mula semula dari $0');});
   const rc=$('#rsClosed');if(rc)rc.onclick=()=>confirm2(rc,'Tekan sekali lagi untuk kosongkan',()=>{manReset((S.manual||[]).filter(p=>p.closed).map(p=>p.id));toast('Rekod selesai dikosongkan');});
   document.querySelectorAll('#main .mrow[data-mid]').forEach(b=>b.onclick=()=>openManDetail(b.dataset.mid));
@@ -1488,6 +1530,16 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'Kos dagangan sebenar':'Real trading costs','Robot kira untung/rugi seperti dagangan sebenar: yuran beli + yuran jual + spread, ikut platform anda.':'The robot counts profit/loss like a real trade: buy fee + sell fee + spread, based on your platform.',
+'Kos sendiri':'Custom cost','Jenis order':'Order type','Exchange (order pasaran)':'Exchange (market order)','Spread / slippage (%)':'Spread / slippage (%)','Jumlah kos pergi-balik':'Total round-trip cost','Yuran setiap transaksi (%)':'Fee per transaction (%)',
+'Exchange: maker 0%, taker 0.10–0.40% ikut volum 30 hari. Instant Buy/Sell 1%.':'Exchange: maker 0%, taker 0.10–0.40% depending on 30-day volume. Instant Buy/Sell 1%.',
+'Exchange: taker 0.25–0.50% ikut volum 30 hari. Instant Buy/Sell 2%.':'Exchange: taker 0.25–0.50% depending on 30-day volume. Instant Buy/Sell 2%.',
+'Masukkan yuran setiap transaksi (beli ATAU jual) ikut skrin yuran platform anda.':"Enter the fee per transaction (buy OR sell) from your platform's fee page.",
+'setiap dagangan.':'per trade.','setiap dagangan. Robot Auto tidak akan masuk kerana kos melebihi kelebihan strategi. Kurangkan kos (contohnya order had / maker) atau pilih platform lebih murah.':"per trade. Auto Robot will not enter because costs exceed the strategy's edge. Lower your costs (e.g. limit / maker orders) or pick a cheaper platform.",
+'Selepas kos platform anda':'After your platform costs','Keluar':'Exit','Tutup atas EMA5':'Close above EMA5','Trailing stop kini':'Current trailing stop','Stop awal':'Initial stop','Kos pergi-balik':'Round-trip cost',
+'Skor teknikal (1 jam)':'Technical score (1 hour)','Bacaan teknikal (carta 1 jam)':'Technical readings (1-hour chart)',
+'Indicator di atas dikira dari carta yang dipilih (asal: 1 jam). Isyarat strategi (RSI 2, Breakout 20) tetap guna harga tutup harian. Rujukan sahaja, bukan cadangan beli/jual.':'The indicators above are calculated from the selected chart (default: 1 hour). Strategy signals (RSI 2, Breakout 20) still use the daily close. Reference only, not a buy/sell recommendation.',
+
 'Coin':'Coins','Portfolio':'Portfolio','Tetapan':'Settings',
 'Amaran':'Alerts','Tutup':'Close','Kembali':'Back','Simpan':'Save','Padam':'Delete','Ubah':'Edit','Lihat':'View','Hidupkan':'Turn on','Matikan':'Turn off',
 'Cari coin':'Search coins','Cuba muat semula':'Try again',
@@ -1653,6 +1705,7 @@ const EN_EXACT={
 'di Tetapan.':'in Settings.',
 
 };
+function trCost(s){return String(s).replace('Exchange (order pasaran)','Exchange (market order)').replace(/^Kos sendiri/,'Custom cost');}
 const EN_RX=[
 
 [/^✓ Broker: (.+)$/,(m,a)=>'✓ Broker: '+a],
@@ -1774,7 +1827,7 @@ Object.assign(EN_EXACT,{
 'Ini bacaan indicator, bukan cadangan beli atau jual.':'This is an indicator reading, not a buy or sell recommendation.',
 'Ditapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.':'Filtered by headline keywords. Positive news does not mean the price will surely rise. This is not a buy or sell recommendation.',
 'Isyarat Pemerhatian lebih lemah daripada Isyarat Kuat dan tidak dimasukkan oleh Robot Auto. Ini bacaan indicator, bukan cadangan beli atau jual.':'Watch signals are weaker than Strong signals and are not entered by the Auto Robot. This is an indicator reading, not a buy or sell recommendation.',
-'Isyarat teknikal untuk rujukan sahaja — bukan cadangan beli/jual. Data harga harian bersifat indikatif dan mungkin berbeza sedikit dari harga di bursa crypto.':'Technical signals are for reference only — not a buy/sell recommendation. Daily price data is indicative and may differ slightly from prices on crypto exchanges.',
+'Indicator di atas dikira dari carta yang dipilih (asal: 1 jam). Isyarat strategi (RSI 2, Breakout 20) tetap guna harga tutup harian. Rujukan sahaja, bukan cadangan beli/jual.':'Technical signals are for reference only — not a buy/sell recommendation. Daily price data is indicative and may differ slightly from prices on crypto exchanges.',
 'Tidak melepasi paras neutral. Bukan ramalan harga akan jatuh; cuma isyarat ini kurang boleh dipercayai untuk coin itu.':'Does not pass the neutral level. Not a prediction that the price will fall; this signal is just less reliable for that coin.',
 'Tiada berita untuk pilihan ini.':'No news for this selection.','Berita sedang dimuat.':'News is loading.','Tiada berita positif yang kukuh hari ini':'No solid positive news today',
 'Isyarat Pemerhatian':'Watch signals','👀 Isyarat Pemerhatian':'👀 Watch signals',
@@ -2018,6 +2071,13 @@ EN_RX.unshift(
 [/^([+-]?[\d.]+)% sejak ditutup$/,'$1% since closed'],[/^(.+) \((\d+) hari\)$/,(m,a,b)=>`${trText(a)} (${b} days)`],
 [/^($[\d.,]+) nilai maya · sasaran (\S+) · cut loss (\S+)$/,'$1 virtual · target $2 · cut loss $3'],
 [/^(\d+)\/100 ⓘ$/,'$1/100 ⓘ'],
+[/^Carta 1 jam · (\S+) pada (.+) \(terkini\)$/,(m,b,c)=>`1-hour chart · ${b} at ${trText(c)} (latest)`],
+[/^Strategi Isyarat aktif \(RSI 2\): purata ([+\-−]?[\d.]+)% dalam backtest \(kos ([\d.]+)%\)\. Dengan kos anda ([\d.]+)%, jangkaan purata$/,'Active-signal strategy (RSI 2): average $1% in the backtest ($2% cost). With your $3% cost, the expected average is'],
+[/^backtest, kos ([\d.]+)%$/,'backtest, $1% cost'],
+[/^(.+) · ([\d.]+)% pergi-balik$/,(m,a,b)=>`${trCost(a)} · ${b}% round trip`],
+[/^([\d.]+)% · (.+)$/,(m,a,b)=>`${a}% · ${trCost(b)}`],
+[/^(\S+) nilai maya · kos ([\d.]+)% pergi-balik(?: \((.+)\))?$/,(m,a,b,c)=>`${a} virtual · ${b}% round-trip cost${c?` (${trCost(c)})`:''}`],
+[/^Ujian maya tanpa wang sebenar\. Untung\/rugi termasuk yuran beli, yuran jual dan spread ikut platform anda \((.+), ([\d.]+)% pergi-balik\)\. Ini bacaan indicator, bukan cadangan beli atau jual\.$/,(m,a,b)=>`Virtual test with no real money. Profit/loss includes the buy fee, sell fee and spread for your platform (${trCost(a)}, ${b}% round trip). This is an indicator reading, not a buy or sell recommendation.`],
 [/^Carta (30 minit|1 jam|Sesi) · (\S+) pada (.+) \(bukan masa nyata\)$/,(m,a,b,c)=>`${a==='30 minit'?'30-minute':a==='1 jam'?'1-hour':'12-hour (session)'} chart · ${b} at ${trText(c)} (not real-time)`],
 [/^Carta (Bulanan|Tahunan) · harga tutup (\S+) pada (.+)$/,(m,a,b,c)=>`${a==='Bulanan'?'Monthly':'Yearly'} chart · close ${b} on ${c}`],
 [/^📝 Ringkasan analisa · 📰 (\d+) berita$/,'📝 Analysis summary · 📰 $1 news'],
@@ -2055,7 +2115,7 @@ EN_RX.unshift(
 [/^🤖 Robot Auto dihidupkan · masuk (\d+) coin$/,'🤖 Auto Robot turned on · entered $1 coin(s)'],
 [/^Dalam robot sejak (.+) @ (\S+)(.*)$/,'In robot since $1 @ $2$3'],
 [/^Ujian robot 12 bulan \((.+) setiap isyarat, (\d+) dagangan\): (.+) tepat (\S+)% · (untung|rugi) (.+)$/,(m,a,b,c,d,e,f)=>`12-month robot test (${a} per signal, ${b} trades): ${trText(c)} accurate ${d}% · ${e==='untung'?'profit':'loss'} ${f}`],
-[/^Skor teknikal (\d+)\/(\d+)$/,'Technical score $1/$2'],[/^Harga (\S+)$/,'Price $1'],
+[/^Skor teknikal (\d+)\/(\d+)$/,'Technical score $1/$2'],[/^Skor teknikal 1J (\d+)\/(\d+)$/,'Technical score 1H $1/$2'],[/^Harga (\S+)$/,'Price $1'],
 [/^Berjaya (\d+) daripada (\d+) kali pada coin ini$/,'Worked $1 out of $2 times on this coin'],
 [/^Ujian robot 12 bulan: (.+) (\S+)% · (untung|rugi) (.+)$/,(m,a,b,c,d)=>`12-month robot test: ${trText(a)} ${b}% · ${c==='untung'?'profit':'loss'} ${d}`],
 [/^Isyarat aktif (\d+)% \((.+)\) · tempoh indicator trading \(hari ke-(\d+) daripada ~(\d+)\) · bermula (.+) hingga (.+)$/,(m,a,b,c,d,e,f)=>`Active signal ${a}% (${trText(b)}) · trading indicator period (day ${c} of ~${d}) · starting date ${trText(e)} to ${trText(f)}`],
@@ -2157,7 +2217,7 @@ Object.assign(EN_EXACT,{
 'Ini bacaan indicator, bukan cadangan beli atau jual.':'This is an indicator reading, not a buy or sell recommendation.',
 'Ditapis berdasarkan kata kunci tajuk. Berita positif tidak bermaksud harga pasti naik. Ini bukan cadangan beli atau jual.':'Filtered by headline keywords. Positive news does not mean the price will surely rise. This is not a buy or sell recommendation.',
 'Isyarat Pemerhatian lebih lemah daripada Isyarat Kuat dan tidak dimasukkan oleh Robot Auto. Ini bacaan indicator, bukan cadangan beli atau jual.':'Watch signals are weaker than Strong signals and are not entered by the Auto Robot. This is an indicator reading, not a buy or sell recommendation.',
-'Isyarat teknikal untuk rujukan sahaja — bukan cadangan beli/jual. Data harga harian bersifat indikatif dan mungkin berbeza sedikit dari harga di bursa crypto.':'Technical signals are for reference only — not a buy/sell recommendation. Daily price data is indicative and may differ slightly from prices on crypto exchanges.',
+'Indicator di atas dikira dari carta yang dipilih (asal: 1 jam). Isyarat strategi (RSI 2, Breakout 20) tetap guna harga tutup harian. Rujukan sahaja, bukan cadangan beli/jual.':'Technical signals are for reference only — not a buy/sell recommendation. Daily price data is indicative and may differ slightly from prices on crypto exchanges.',
 'Tidak melepasi paras neutral. Bukan ramalan harga akan jatuh; cuma isyarat ini kurang boleh dipercayai untuk coin itu.':'Does not pass the neutral level. Not a prediction that the price will fall; this signal is just less reliable for that coin.',
 'Tiada berita untuk pilihan ini.':'No news for this selection.','Berita sedang dimuat.':'News is loading.','Tiada berita positif yang kukuh hari ini':'No solid positive news today',
 'Isyarat Pemerhatian':'Watch signals','👀 Isyarat Pemerhatian':'👀 Watch signals',
@@ -2271,7 +2331,7 @@ function setLang(l){
   S.settings.lang=l;save();document.documentElement.lang=l==='en'?'en':'ms';
   if(MO){MO.disconnect();MO=null;}
   closeSheet();render();
-  const nav={coin:'Coin',news:'News',gl:'G & L',robot:'Robot',tetapan:'Tetapan'};
+  const nav={coin:'Coin',robot:'Robot',news:'News',gl:'G & L',tetapan:'Tetapan'};
   document.querySelectorAll('#nav button').forEach(b=>{const t=b.lastChild;t.nodeValue=nav[b.dataset.tab];});
   $('#bell').setAttribute('aria-label','Amaran');
   updateLangBtn();startI18N();
@@ -2369,7 +2429,7 @@ function heroSeries0(code,tf){
   const c=S.cache[code],m=mk(code),daily=c&&c.bars.length>=5?c.bars:null,ib=INTRA[code];
   const pick=(b,n)=>{const x=b.slice(-n);return {v:x.map(y=>y.c),d:x.map(y=>y.d)};};
   if(tf==='30m')return ib?pick(ib,72):null;
-  if(tf==='1j')return ib?pick(aggBars(ib,d=>d.slice(0,13)),60):null;
+  if(tf==='1j')return H1C[code]?pick(H1C[code].bars,60):ib?pick(aggBars(ib,d=>d.slice(0,13)),60):null;
   if(tf==='12j')return ib?pick(aggBars(ib,d=>d.slice(0,10)+(+d.slice(11,13)<13?'a':'p')),44):null;
   if(tf==='W')return daily?pick(weekly(daily),104):null;
   if(tf==='M')return daily?pick(aggBars(daily,d=>d.slice(0,7)),60):null;
@@ -2381,13 +2441,15 @@ const HTF=[['30m','30m'],['1j','1J'],['12j','12J'],['D','Hari'],['W','Minggu'],[
 const TFN={'30m':'30 minit','1j':'1 jam','12j':'Sesi','D':'Harian','W':'Mingguan','M':'Bulanan','Y':'Tahunan'};
 function heroTfHTML(code){return `<div class="seg tfseg htf">${HTF.map(([k,l])=>`<button data-htf="${k}" data-code="${esc(code)}" class="${k===HERO_TF?'on':''}">${l}</button>`).join('')}</div>`;}
 async function setHeroTf(tf,code){
-  if(['30m','1j','12j'].includes(tf)){try{await getIntra(code);}catch(e){return toast('Data carta tidak tersedia.');}}
+  if(tf==='1j'){try{await getH1(code);}catch(e){return toast('Data carta tidak tersedia.');}}
+  else if(['30m','12j'].includes(tf)){try{await getIntra(code);}catch(e){return toast('Data carta tidak tersedia.');}}
   else if(tf!=='D'||!S.cache[code]){try{await getBars(code);}catch(e){}}
   HERO_TF=tf;renderWatch();}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-htf]');if(!b)return;e.stopPropagation();setHeroTf(b.dataset.htf,b.dataset.code);},true);
 function heroChart(code){
   let Sx=heroSeries(code,HERO_TF);
-  if(!Sx&&['30m','1j','12j'].includes(HERO_TF)&&!INTRA[code]&&!heroChart._ld){heroChart._ld=1;getIntra(code).then(()=>{heroChart._ld=0;renderWatch();}).catch(()=>{heroChart._ld=0;});}
+  if(HERO_TF==='1j'&&!(H1C[code]&&Date.now()-H1C[code].at<300e3)&&!heroChart._h1){heroChart._h1=1;getH1(code).then(()=>{heroChart._h1=0;renderWatch();}).catch(()=>{heroChart._h1=0;});}
+  if(!Sx&&['30m','12j'].includes(HERO_TF)&&!INTRA[code]&&!heroChart._ld){heroChart._ld=1;getIntra(code).then(()=>{heroChart._ld=0;renderWatch();}).catch(()=>{heroChart._ld=0;});}
   let tf=HERO_TF;if(!Sx){tf='D';Sx=heroSeries(code,'D');}if(!Sx||Sx.v.length<2)return '';
   const tfl=TFN[tf];const v=Sx.v,d0=Sx.d[0],d1=Sx.d[Sx.d.length-1];const fb=x=>tf==='12j'?fmtBar(x.slice(0,10),'Harian')+(x.slice(11,13)<'13'?' AM':' PM'):fmtBar(x,tfl);
   const W=400,H=230,mn=Math.min(...v),mx=Math.max(...v),r=mx-mn||1,y=x=>2+(1-(x-mn)/r)*(H-4);
@@ -2450,12 +2512,12 @@ function rCoin(){
 }
 function goTab(t){TAB=t;if(t!=='coin')bkEnsure();document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));render();window.scrollTo(0,0);}
 function renderWatch(){if(TAB==='coin'){const y=window.scrollY;rCoin();window.scrollTo(0,y);}}
-function sheetStatHTML(code){
-  const m=mk(code);if(!m||!m.va)return '';
+function sheetStatHTML(code,A){
+  const m=mk(code);if(!m||!m.va)return '';const h1=A&&A.tf==='1 jam'&&A.valid,sc=h1?A.score:m.sc,va=h1?A.valid:m.va;
   let so=bestOp(code);
   if(!so){const sg=signalFor(code),now=m.c;if(sg&&now!=null&&now<sg.tg&&now>sg.sl&&tdBetween(sg.start,S.market.meta.asof)<=BTH().h)so=sg;}
-  const R=so?rateSignal(so):null,V=scoreVerdict(m.sc,m.va);
-  return `<div class="hstat" style="margin:10px 0 0"><span><small>Isyarat</small>${R?`<span class="badge ${R.cls}">${R.lbl}</span>`:`<span class="badge b-na">Tiada isyarat aktif</span>`}</span>${V?`<span><small>Skor teknikal ${m.sc}/${m.va}</small><span class="badge ${V.cls}">${V.lbl}</span></span>`:''}${so&&isChamp(so,code)?`<span><small>&nbsp;</small><span class="badge b-gold">🏆 Champion</span></span>`:''}<button class="sinfo" onclick="openStatusHelp()" aria-label="Maksud status">ⓘ</button></div>`;
+  const R=so?rateSignal(so):null,V=scoreVerdict(sc,va);
+  return `<div class="hstat" style="margin:10px 0 0"><span><small>Isyarat</small>${R?`<span class="badge ${R.cls}">${R.lbl}</span>`:`<span class="badge b-na">Tiada isyarat aktif</span>`}</span>${V?`<span><small>Skor teknikal${h1?' 1J':''} ${sc}/${va}</small><span class="badge ${V.cls}">${V.lbl}</span></span>`:''}${so&&isChamp(so,code)?`<span><small>&nbsp;</small><span class="badge b-gold">🏆 Champion</span></span>`:''}<button class="sinfo" onclick="openStatusHelp()" aria-label="Maksud status">ⓘ</button></div>`;
 }
 /* ===== Platform luar (pautan sahaja — ProCoin kekal app indicator) ===== */
 const PLATFORMS=[
@@ -2530,14 +2592,14 @@ async function openAnalysis(code){
   document.body.appendChild(d);
   const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};
   d.onclick=e=>{if(e.target===d)close();};$('#helpX').onclick=close;
-  let A=null;try{A=analyze(await getBars(code));}catch(e){}
+  let A=null;try{A=await chartFor(code,'1j');if(A.c.length<30)A=null;}catch(e){}if(!A){try{A=analyze(await getBars(code));}catch(e){}}
   const B=$('#anBody');if(!B)return;try{B.innerHTML=analysisHTML(code,A);}catch(e){B.innerHTML=`<p class="muted">Ringkasan tidak dapat dipaparkan.</p>`;}
 }
 function analysisHTML(code,A){
   const nm=nameOf(code),st=status(code,nm),m=mk(code);
   let so=bestOp(code);if(!so){const sg=signalFor(code);if(sg&&m&&m.c!=null&&m.c<sg.tg&&m.c>sg.sl&&tdBetween(sg.start,S.market.meta.asof)<=BTH().h)so=sg;}
   if(so&&!so.start&&m)so={...so,start:subTradingDays(m.d,so.ago||0)};
-  const R=so?rateSignal(so):null,V=m&&m.va?scoreVerdict(m.sc,m.va):null,champ=so&&isChamp(so,code);
+  const h1=A&&A.tf==='1 jam'&&A.valid,SC=h1?A.score:m&&m.sc,VA=h1?A.valid:m&&m.va;const R=so?rateSignal(so):null,V=VA?scoreVerdict(SC,VA):null,champ=so&&isChamp(so,code);
   const N=newsFor(code),np=N.filter(x=>x.x==='+').length,nn=N.filter(x=>x.x==='-').length;
   // Kesimpulan
   let ks;
@@ -2548,7 +2610,7 @@ function analysisHTML(code,A){
   else ks='Tiada isyarat aktif dan trend semasa tidak kuat. Tiada bacaan positif buat masa ini.';
   const ns=N.length?`Berita 30 hari: ${N.length} tajuk (${np} positif, ${nn} negatif).`:'';
   let h=meterHTML(code,true)+`<div class="verd"><b>Kesimpulan</b><p style="margin:4px 0 0">${esc(ks)}</p>${ns?`<p style="margin:4px 0 0">${esc(ns)}</p>`:''}</div>`;
-  h+=`<div class="hstat" style="margin:12px 0 4px">${badge(st)}${st==='no'?'':R?`<span class="badge ${R.cls}">${R.lbl}</span>`:'<span class="badge b-na">Tiada isyarat aktif</span>'}${V&&st!=='no'?`<span class="badge ${V.cls}">Skor ${m.sc}/${m.va} · ${V.lbl.split(' –')[0]}</span>`:''}${champ&&st!=='no'?'<span class="badge b-gold">🏆 Champion</span>':''}</div>`;
+  h+=`<div class="hstat" style="margin:12px 0 4px">${badge(st)}${st==='no'?'':R?`<span class="badge ${R.cls}">${R.lbl}</span>`:'<span class="badge b-na">Tiada isyarat aktif</span>'}${V&&st!=='no'?`<span class="badge ${V.cls}">Skor ${SC}/${VA} · ${V.lbl.split(' –')[0]}</span>`:''}${champ&&st!=='no'?'<span class="badge b-gold">🏆 Champion</span>':''}</div>`;
   // Isyarat
   if(so&&st!=='no'){const md=Math.max(1,Math.round(so.md||0)),tp=(so.tg/so.en-1)*100,sp=(1-so.sl/so.en)*100;
     h+=`<h3>Isyarat</h3><div class="card" style="margin:0">
@@ -2560,7 +2622,7 @@ function analysisHTML(code,A){
       <div class="kv"><span>Sasaran</span><b class="up">${px(so.tg)} (+${tp.toFixed(1)}%)</b></div>
       <div class="kv"><span>Cut loss</span><b class="dn">${px(so.sl)} (−${sp.toFixed(1)}%)</b></div></div>`;}
   // Teknikal
-  if(A&&st!=='no'){h+=`<h3>Bacaan teknikal (${A.tf==='Mingguan'?'mingguan':'harian'})</h3><div class="card" style="margin:0">${A.checks.map(c=>`<div class="hrow"><span class="hic">${c.ok===true?'✅':c.ok===false?'❌':'➖'}</span><div><b>${esc(c.title)}</b><p class="muted">${esc(c.txt)}</p></div></div>`).join('')}${A.cross?`<p style="margin:8px 0 0">${esc(A.cross)}</p>`:''}</div>`;}
+  if(A&&st!=='no'){h+=`<h3>Bacaan teknikal (${A.tf==='1 jam'?'carta 1 jam':A.tf==='Mingguan'?'mingguan':'harian'})</h3><div class="card" style="margin:0">${A.checks.map(c=>`<div class="hrow"><span class="hic">${c.ok===true?'✅':c.ok===false?'❌':'➖'}</span><div><b>${esc(c.title)}</b><p class="muted">${esc(c.txt)}</p></div></div>`).join('')}${A.cross?`<p style="margin:8px 0 0">${esc(A.cross)}</p>`:''}</div>`;}
   else if(m&&m.va&&st!=='no')h+=`<h3>Bacaan teknikal</h3><div class="card" style="margin:0"><div class="kv"><span>RSI 14</span><b>${m.r!=null?Math.round(m.r):'-'}</b></div><div class="kv"><span>EMA200</span><b>${m.e2==null?'-':m.e2?'Atas':'Bawah'}</b></div><div class="kv"><span>MACD</span><b>${m.m==null?'-':m.m?'Positif':'Negatif'}</b></div></div>`;
   h+=filterCardHTML(code,true);
   h+=fundHTML(code);
@@ -2594,7 +2656,7 @@ function stockSheet(code,name){
   document.querySelectorAll('[data-pfc]').forEach(b=>b.onclick=()=>openPlatform(+b.dataset.pfc,code));
   const run=async force=>{
     $('#indBody').innerHTML='Memuatkan…';
-    try{const A=analyze(await getBars(code,force));showInd(A,blocked,code);const ss=document.querySelector('#sheetBody .sst');if(ss)ss.outerHTML=statusHTML(code,name);const bh=$('#btHist');if(bh&&!blocked)bh.innerHTML=btHistHTML(S.cache[code]&&S.cache[code].bt);}catch(e){$('#indBody').innerHTML=`<div class="alert a-red">${esc(e.message)}</div>`;}
+    try{let A=null;if(force&&H1C[code])H1C[code].at=0;try{A=await chartFor(code,'1j');}catch(e){}if(!A||A.c.length<30)A=analyze(await getBars(code,force));else getBars(code).catch(()=>{});showInd(A,blocked,code);const hs=document.querySelector('#sheetBody .shrow .hstat');if(hs){const t=document.createElement('div');t.innerHTML=sheetStatHTML(code,A);if(t.firstElementChild){hs.replaceWith(t.firstElementChild);if(typeof applyLang==='function')applyLang();}}const ss=document.querySelector('#sheetBody .sst');if(ss)ss.outerHTML=statusHTML(code,name);const bh=$('#btHist');if(bh&&!blocked)bh.innerHTML=btHistHTML(S.cache[code]&&S.cache[code].bt);}catch(e){$('#indBody').innerHTML=`<div class="alert a-red">${esc(e.message)}</div>`;}
   };
   $('#ldBtn').onclick=()=>run(true);
   if(mk(code)||S.cache[code])run(false);
@@ -2607,24 +2669,24 @@ function scoreVerdict(sc,va){
   return {lbl:'Lemah',cls:'b-no',txt:'Kebanyakan indicator menunjukkan trend atau momentum menurun.'};
 }
 function showInd(A,blocked,code){
-  const L=A.last;const tf0=A.tf==='Mingguan'?'W':'D';
-  let h=`<div class="seg tfseg" id="tfSeg">${TFS.map(([k,l])=>`<button data-tf="${k}" class="${k===tf0?'on':''}${['30m','1j','12j'].includes(k)&&!hasIntra(code)?' dis':''}">${l}</button>`).join('')}</div>
-   <div class="muted" id="cvCap">Carta ${A.tf} · harga tutup ${px(L.c)} pada ${fmtD(L.d)}</div><canvas id="cv"></canvas>
+  const L=A.last;const tf0=A.tf==='1 jam'?'1j':A.tf==='Mingguan'?'W':'D';
+  let h=`<div class="seg tfseg" id="tfSeg">${TFS.map(([k,l])=>`<button data-tf="${k}" class="${k===tf0?'on':''}${['30m','12j'].includes(k)&&!hasIntra(code)?' dis':''}">${l}</button>`).join('')}</div>
+   <div class="muted" id="cvCap">${A.tf==='1 jam'?`Carta 1 jam · ${px(L.c)} pada ${fmtBar(L.d,A.tf)}${h1Live(code)?' (terkini)':' (bukan masa nyata)'}`:`Carta ${A.tf} · harga tutup ${px(L.c)} pada ${fmtD(L.d)}`}</div><canvas id="cv"></canvas>
    <div class="muted" style="font-size:11px">— Harga · <span style="color:var(--gold)">EMA20</span> · <span style="color:var(--blue)">EMA50</span> · <span style="color:var(--red)">EMA200</span> · kawasan hijau = Bollinger</div>`;
   {
     const V=scoreVerdict(A.score,A.valid);
-    h+=`<div class="verd"><div class="row between"><div><b>Skor teknikal</b>${V?`<div style="margin-top:4px"><span class="badge ${V.cls}">${V.lbl}</span></div>`:''}</div><span class="big">${A.score}/${A.valid}</span></div>${V?`<p class="muted" style="margin:6px 0 0">${V.txt} Skor ialah bilangan indicator (daripada ${A.valid}) yang positif sekarang.</p>`:''}</div>`;
+    h+=`<div class="verd"><div class="row between"><div><b>Skor teknikal${A.tf==='1 jam'?' (1 jam)':''}</b>${V?`<div style="margin-top:4px"><span class="badge ${V.cls}">${V.lbl}</span></div>`:''}</div><span class="big">${A.score}/${A.valid}</span></div>${V?`<p class="muted" style="margin:6px 0 0">${V.txt} Skor ialah bilangan indicator (daripada ${A.valid}) yang positif sekarang.</p>`:''}</div>`;
     h+=A.checks.map(c=>`<div class="check"><span class="i">${c.ok===null?'·':c.ok?'✅':'❌'}</span><div><b>${c.title}</b><div class="muted">${esc(c.txt)}</div></div></div>`).join('');
     if(A.cross)h+=`<div class="alert a-gold">${A.cross}</div>`;
-    h+=`<div class="disc">Isyarat teknikal untuk rujukan sahaja — bukan cadangan beli/jual. Data harga harian bersifat indikatif dan mungkin berbeza sedikit dari harga di bursa crypto.</div>`;
+    h+=`<div class="disc">Indicator di atas dikira dari carta yang dipilih (asal: 1 jam). Isyarat strategi (RSI 2, Breakout 20) tetap guna harga tutup harian. Rujukan sahaja, bukan cadangan beli/jual.</div>`;
   }
   $('#indBody').innerHTML=h;
   requestAnimationFrame(()=>{drawChart($('#cv'),A);bindCanvasHover($('#cv'),A);});
   document.querySelectorAll('#tfSeg [data-tf]').forEach(b=>b.onclick=async()=>{const tf=b.dataset.tf;
-    if(['30m','1j','12j'].includes(tf)&&!hasIntra(code))return toast('Carta 30 minit / 1 jam / 12 jam hanya untuk coin yang dipantau (isyarat aktif atau skor tinggi).');
+    if(['30m','12j'].includes(tf)&&!hasIntra(code))return toast('Carta 30 minit / 1 jam / 12 jam hanya untuk coin yang dipantau (isyarat aktif atau skor tinggi).');
     document.querySelectorAll('#tfSeg [data-tf]').forEach(x=>x.classList.toggle('on',x===b));$('#cvCap').textContent='Memuatkan…';
     try{const B=await chartFor(code,tf);const cv=$('#cv');if(!cv)return;const l=B.last;
-      $('#cvCap').textContent=['30m','1j','12j'].includes(tf)?`Carta ${B.tf} · ${px(l.c)} pada ${fmtBar(l.d,B.tf)} (bukan masa nyata)`:`Carta ${B.tf} · harga tutup ${px(l.c)} pada ${fmtBar(l.d,B.tf)}`;
+      $('#cvCap').textContent=tf==='1j'?`Carta 1 jam · ${px(l.c)} pada ${fmtBar(l.d,B.tf)}${h1Live(code)?' (terkini)':' (bukan masa nyata)'}`:['30m','12j'].includes(tf)?`Carta ${B.tf} · ${px(l.c)} pada ${fmtBar(l.d,B.tf)} (bukan masa nyata)`:`Carta ${B.tf} · harga tutup ${px(l.c)} pada ${fmtBar(l.d,B.tf)}`;
       drawChart(cv,B);bindCanvasHover(cv,B);}catch(e){$('#cvCap').textContent='Data carta tidak tersedia.';}});
 }
 
