@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-30T22:23+00:00",
+ "generated": "2026-10-30T22:49+00:00",
  "asof": "2026-10-29",
  "provider": "yfinance",
  "currency": "USD",
@@ -50,19 +50,19 @@
    "d75": 14,
    "ev": -0.81
   },
-  "drop15": {
-   "name": "Jatuh mendadak dalam trend naik (lantunan)",
-   "n": 101,
-   "w": 76,
-   "p": 75,
-   "md": 6.0,
-   "d25": 4,
-   "d75": 8,
-   "ev": 3.63,
-   "aw": 7.95,
+  "drop2d": {
+   "name": "Jatuh mendadak (lantunan selepas jualan panik)",
+   "n": 298,
+   "w": 201,
+   "p": 67,
+   "md": 8,
+   "d25": 5,
+   "d75": 11,
+   "ev": 2.59,
+   "aw": 9.81,
    "cf": "tinggi",
    "grade": "A",
-   "rule": "Masuk bila coin jatuh lebih 15% dalam 3 hari tetapi masih atas EMA200. Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3\u00d7 ATR.",
+   "rule": "Masuk bila coin jatuh lebih 15% dalam 2 hari (jualan panik). Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3\u00d7 ATR.",
    "kATR": 3.0,
    "max": 20
   },
@@ -84,7 +84,7 @@
   }
  },
  "strat": {
-  "drop15": "A",
+  "drop2d": "A",
   "ema2050": "B"
  },
  "klci": {
