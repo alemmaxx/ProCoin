@@ -2,3 +2,4 @@ requests>=2.31
 yfinance>=0.2.40
 pandas>=2.0
 playwright>=1.44
+numpy>=1.26

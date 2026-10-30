@@ -54,6 +54,10 @@ jobs:
         continue-on-error: true
         run: python scripts/coininfo.py --out _site/data
 
+      - name: Ciri isyarat (BTC, 4 jam, kekuatan relatif, Fear & Greed, funding, model)
+        continue-on-error: true
+        run: python scripts/features.py --out _site/data
+
       - name: Tarik berita crypto (Google News)
         continue-on-error: true
         run: python scripts/news.py --out _site/data
@@ -63,7 +67,7 @@ jobs:
           git config user.name "procoin-bot"
           git config user.email "actions@users.noreply.github.com"
           python3 -c "import json;m=json.load(open('_site/data/market.json'))['meta'];json.dump(m,open('data/market-meta.json','w'),indent=1)" || true
-          git add data/signals.json data/paper-live.json data/paper-summary.json data/paper-experiments.json data/exit-experiments.json data/market-meta.json data/news.json data/fund.json data/klci.json data/regime-experiment.json 2>/dev/null || true
+          git add data/signals.json data/paper-live.json data/paper-summary.json data/paper-experiments.json data/exit-experiments.json data/market-meta.json data/news.json data/fund.json data/klci.json data/regime-experiment.json data/features.json 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Data: rekod prestasi isyarat"
             git pull --rebase -X theirs -q || true
@@ -73,7 +77,7 @@ jobs:
       - name: Sediakan laman
         run: |
           cp index.html privacy.html manifest.webmanifest sw.js _site/
-          cp data/paper-experiments.json data/exit-experiments.json data/status.json data/live.json _site/data/ 2>/dev/null || true
+          cp data/paper-experiments.json data/exit-experiments.json data/status.json data/live.json data/research.json _site/data/ 2>/dev/null || true
           cp -r icons _site/icons
           touch _site/.nojekyll
 
