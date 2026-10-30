@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-30T07:43+00:00",
+ "generated": "2026-10-30T08:10+00:00",
  "asof": "2026-10-29",
  "provider": "yfinance",
  "currency": "USD",
@@ -49,7 +49,43 @@
    "d25": 3,
    "d75": 14,
    "ev": -0.81
+  },
+  "rsi2": {
+   "name": "RSI(2) bawah 10 dalam trend menaik (lantunan pendek)",
+   "n": 541,
+   "w": 353,
+   "p": 65,
+   "md": 4,
+   "d25": 3,
+   "d75": 5,
+   "ev": 0.75,
+   "aw": 4.53,
+   "cf": "tinggi",
+   "grade": "A",
+   "rule": "Keluar bila harga tutup atas EMA5, atau selepas 10 hari. Cut loss 2.5\u00d7 ATR.",
+   "kATR": 2.5,
+   "max": 10
+  },
+  "brk20": {
+   "name": "Breakout 20 hari + trailing stop 3\u00d7 ATR",
+   "n": 683,
+   "w": 269,
+   "p": 39,
+   "md": 11,
+   "d25": 6,
+   "d75": 18,
+   "ev": 0.52,
+   "aw": 16.16,
+   "cf": "tinggi",
+   "grade": "B",
+   "rule": "Trailing stop 3\u00d7 ATR di bawah harga tertinggi sejak beli (naik ikut harga, tidak turun).",
+   "kATR": 3.0,
+   "max": 120
   }
+ },
+ "strat": {
+  "rsi2": "A",
+  "brk20": "B"
  },
  "klci": {
   "d": "2026-10-29",
