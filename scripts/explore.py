@@ -276,7 +276,8 @@ def main():
                 trades.append({"c": code, "sig": x.d[t0], "in": x.d[ei], "out": x.d[xo], "g": g, "open": op,
                                "days": xo - ei})
         done = [t for t in trades if not t["open"]]
-        row = {"key": key, "name": name, "trades_total": len(trades)}
+        row = {"key": key, "name": name, "trades_total": len(trades),
+               "tl": [[t["c"], t["in"], t["out"], round(t["g"], 2), t["open"]] for t in sorted(trades, key=lambda t: t["in"]) if t["in"] >= P["24m"]]}
         for cost in COSTS:
             ck = f"c{cost}"
             rows = {}
