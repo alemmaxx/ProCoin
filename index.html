@@ -300,7 +300,7 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 .capbox{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}.capg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.capg>div{background:var(--card);border-radius:10px;padding:8px 10px}.capg small{display:block;color:var(--muted);font-size:12px}
 .auopt.off{opacity:.45;pointer-events:none}
 #main{overflow-x:clip}
-.srcl{white-space:nowrap}.srct{table-layout:fixed}.srct td,.srct th{font-size:11.5px;padding:6px 2px;word-break:break-word}.srct th:first-child,.srct td:first-child{text-align:left;width:34%}.srct th{font-weight:600;color:var(--muted)}
+.srcl{white-space:nowrap}.cst{table-layout:fixed}.cst td,.cst th{font-size:12px;padding:7px 2px;text-align:center}.cst td,.cst th{white-space:nowrap}.cst th:first-child,.cst td:first-child{text-align:left;width:30%;white-space:normal;word-break:break-word}.cst th:last-child,.cst td:last-child{width:21%;text-align:right}.cst th{color:var(--muted);font-weight:600}.cst tr.tot td{font-weight:800;border-top:2px solid var(--line)}.srct{table-layout:fixed}.srct td,.srct th{font-size:11.5px;padding:6px 2px;word-break:break-word}.srct th:first-child,.srct td:first-child{text-align:left;width:34%}.srct th{font-weight:600;color:var(--muted)}
 .perfb{display:block;width:calc(100% - 2*var(--gut));margin:0 auto 12px;box-sizing:border-box}
 .pft td,.pft th{padding:6px 4px;text-align:right;font-size:12.5px}.pft td:first-child,.pft th:first-child{text-align:left}.pft td:nth-child(2){text-align:left}
 .capd{display:block;width:calc(100% - 2*var(--gut));box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer}.capd0{display:flex;align-items:center;gap:12px}.capd0>span:first-child{font-size:24px}.capd0>span:nth-child(2){flex:1;display:flex;flex-direction:column}.capd0 small{color:var(--muted);font-size:12.5px}
@@ -1294,6 +1294,16 @@ function openManual(code){
 /* Sumber dagangan: isyarat mana yang buka posisi ini */
 function srcKey(p){return p.why==='news'?'news':p.st?(isDrop(p.st)?'drop':p.st):p.why==='sig'?'sig':'man';}
 function srcLbl(p){return ({news:'📰 Berita',drop:'🟢 Jatuh mendadak',ema2050:'👀 Trend EMA20×EMA50',rsi2:'🟢 RSI 2 (lama)',brk20:'👀 Breakout 20 (lama)',sig:'🟢 Isyarat',man:'✍️ Manual (tanpa isyarat)'})[srcKey(p)]||'✍️ Manual';}
+/* Ringkasan dagangan selesai ikut sumber isyarat */
+function openClosedSum(){const cl=(S.manual||[]).filter(p=>p.closed);const by={};cl.forEach(p=>{(by[srcKey(p)]=by[srcKey(p)]||[]).push(p);});
+  const st=L=>{const pl=L.map(p=>manPnl(p,p.closed.exit)),w=pl.filter(x=>x>0).length,n=L.length;return {n,w,l:n-w,wp:n?w/n*100:0,tot:pl.reduce((a,b)=>a+b,0)};};
+  const row=(lbl,s,b)=>`<tr${b?' class="tot"':''}><td>${lbl}</td><td class="up">${s.w}</td><td class="dn">${s.l}</td><td class="up">${s.wp.toFixed(0)}%</td><td class="dn">${(100-s.wp).toFixed(0)}%</td><td class="${s.tot>=0?'up':'dn'}">${rmS(s.tot)}</td></tr>`;
+  const ks=Object.keys(by).sort((a,b)=>by[b].length-by[a].length);
+  const d=document.createElement('div');d.className='help';d.id='help';document.body.classList.add('ovl');bkEnsure();
+  d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true"><div class="shd-top" style="margin-bottom:8px"><h2 style="margin:0">📊 Ringkasan selesai</h2><button class="xbtn" id="helpX" aria-label="Tutup">✕</button></div>
+   <table class="cmpt cst"><tr><th>Sumber</th><th>Win</th><th>Lose</th><th>Win%</th><th>Lose%</th><th>U/R</th></tr>${ks.map(k=>row(srcLbl(by[k][0]),st(by[k]))).join('')}${ks.length>1?row('Jumlah',st(cl),1):''}</table>
+   <p class="muted" style="font-size:11px;margin:8px 0 0">Win = untung selepas kos. U/R = untung/rugi bersih ($).</p></div>`;
+  document.body.appendChild(d);const close=()=>{d.remove();if(!$('#sheet').classList.contains('on'))document.body.classList.remove('ovl');};d.onclick=e=>{if(e.target===d)close();};$('#helpX').onclick=close;}
 function mtag(p){return p.src==='A'?'<span class="mtag a">A</span>':'<span class="mtag m">M</span>';}
 function manRow(p){const nm=shortName(p.name||nameOf(p.code));const m=mk(p.code),now=nowPx(p.code);
   if(p.closed){const C=p.closed,r=RES3[C.res],u=manPnl(p,C.exit),xp=u/p.stake*100;
@@ -1343,12 +1353,12 @@ function rManual(){
     h+=`<div class="card eqcard"><h2>Graf untung / rugi</h2><p class="muted" style="margin:0;font-size:12px">Jumlah terkumpul dari ujian pertama${op.length?', termasuk ujian yang masih terbuka pada harga kini':''}.</p>${equitySVG(cv,1,'eqs')}</div>`;}
   if(!M.length)h+=`<div class="card"><p class="muted" style="margin:0">Belum ada coin. Buka mana-mana coin dan tekan butang ✍️ Manual di atas kanan untuk mula ujian.</p></div>`;
   if(op.length)h+=`<div class="card rlist"><h2>Sedang diuji (${op.length})</h2>${op.map(manRow).join('')}</div>`;
-  if(cl.length)h+=`<div class="card rlist"><h2>Selesai (${cl.length})</h2>${cl.map(manRow).join('')}</div>`;
+  if(cl.length)h+=`<div class="card rlist"><div class="row between" style="align-items:center;margin-bottom:4px"><h2 style="margin:0">Selesai (${cl.length})</h2><button class="btn sm sec" id="clSum" style="padding:5px 10px;font-size:12.5px">📊 Ringkasan</button></div>${cl.map(manRow).join('')}</div>`;
   if(M.length)h+=`<p class="disc" style="margin:6px var(--gut) 0">Ujian maya tanpa wang sebenar. Untung/rugi termasuk yuran beli, yuran jual dan spread ikut platform anda (${esc(costLabel())}, ${(costRT()*100).toFixed(2)}% pergi-balik). Ini bacaan indicator, bukan cadangan beli atau jual.</p>`;
   return h;}
 function manReset(ids){const del=new Set(ids);S.manual=(S.manual||[]).filter(p=>!del.has(p.id));S.manDel=[...new Set([...(S.manDel||[]),...ids])].slice(-300);save();rRobot();}
 function confirm2(btn,msg,fn){if(btn.dataset.armed){fn();return;}btn.dataset.armed=1;const t=btn.textContent;btn.textContent=msg;btn.classList.add('red');setTimeout(()=>{if(btn.isConnected){delete btn.dataset.armed;btn.textContent=t;btn.classList.remove('red');}},3500);}
-function bindManual(){bindAuto();
+function bindManual(){bindAuto();const cs=$('#clSum');if(cs)cs.onclick=openClosedSum;
   const ra=$('#rsAll');if(ra)ra.onclick=()=>confirm2(ra,'Tekan sekali lagi untuk reset',()=>{manReset((S.manual||[]).map(p=>p.id));toast('Robot Manual direset — mula semula dari $0');});
   const rc=$('#rsClosed');if(rc)rc.onclick=()=>confirm2(rc,'Tekan sekali lagi untuk kosongkan',()=>{manReset((S.manual||[]).filter(p=>p.closed).map(p=>p.id));toast('Rekod selesai dikosongkan');});
   document.querySelectorAll('#main .mrow[data-mid]').forEach(b=>b.onclick=()=>openManDetail(b.dataset.mid));
@@ -1595,6 +1605,7 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'📊 Ringkasan':'📊 Summary','📊 Ringkasan selesai':'📊 Closed summary','U/R':'P/L','Jumlah':'Total','Win = untung selepas kos. U/R = untung/rugi bersih ($).':'Win = profit after costs. P/L = net profit/loss ($).',
 'RSI 2 (lama)':'RSI 2 (old)','Breakout 20 (lama)':'Breakout 20 (old)','Manual (tanpa isyarat)':'Manual (no signal)','Trend EMA20×EMA50':'EMA20×EMA50 trend','Jatuh mendadak':'Sharp drop',
 'Sumber':'Source','Bil.':'No.',
 '📰 Berita':'📰 News','🟢 Jatuh mendadak':'🟢 Sharp drop','👀 Trend EMA20×EMA50':'👀 EMA20×EMA50 trend','🟢 RSI 2 (lama)':'🟢 RSI 2 (old)','👀 Breakout 20 (lama)':'👀 Breakout 20 (old)','🟢 Isyarat':'🟢 Signal','✍️ Manual (tanpa isyarat)':'✍️ Manual (no signal)','Ikut sumber isyarat':'By signal source','Dagangan':'Trades','Menang':'Won','Selesai':'Closed','Terbuka':'Open','Menang = dagangan selesai yang untung selepas kos.':'Won = closed trades in profit after costs.',
