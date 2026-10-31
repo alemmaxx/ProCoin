@@ -62,13 +62,22 @@ jobs:
         continue-on-error: true
         run: python scripts/news.py --out _site/data
 
+      - name: Notifikasi Telegram (isyarat & berita)
+        continue-on-error: true
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/notify.py --kind signals --market _site/data/market.json
+          python scripts/notify.py --kind news --market _site/data/market.json --news _site/data/news.json
+
       - name: Commit rekod prestasi isyarat
         run: |
           git config user.name "procoin-bot"
           git config user.email "actions@users.noreply.github.com"
           python3 -c "import json;m=json.load(open('_site/data/market.json'))['meta'];json.dump(m,open('data/market-meta.json','w'),indent=1)" || true
           cp _site/data/perf.json data/perf.json 2>/dev/null || true
-          git add data/signals.json data/paper-live.json data/paper-summary.json data/paper-experiments.json data/exit-experiments.json data/market-meta.json data/news.json data/fund.json data/klci.json data/regime-experiment.json data/features.json data/perf.json 2>/dev/null || true
+          git add data/signals.json data/paper-live.json data/paper-summary.json data/paper-experiments.json data/exit-experiments.json data/market-meta.json data/news.json data/fund.json data/klci.json data/regime-experiment.json data/features.json data/perf.json data/notify-state.json 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Data: rekod prestasi isyarat"
             git pull --rebase -X theirs -q || true
