@@ -1,10 +1,10 @@
 {
- "generated": "2026-10-30T22:49+00:00",
- "asof": "2026-10-29",
+ "generated": "2026-10-31T01:12+00:00",
+ "asof": "2026-10-30",
  "provider": "yfinance",
  "currency": "USD",
  "rawLast": "2026-10-29",
- "hourFill": 0,
+ "hourFill": 21,
  "count": 21,
  "priced": 21,
  "bt": {
@@ -16,21 +16,21 @@
  "setups": {
   "pb": {
    "name": "Koreksi dalam trend menaik",
-   "n": 54,
-   "p": 39,
+   "n": 55,
+   "p": 38,
    "md": 4,
    "d25": 4,
    "d75": 7,
-   "ev": -0.74
+   "ev": -0.82
   },
   "gc": {
    "name": "Golden cross",
    "n": 90,
-   "p": 39,
-   "md": 4,
+   "p": 40,
+   "md": 3.5,
    "d25": 2,
    "d75": 7,
-   "ev": 0.03
+   "ev": 0.14
   },
   "mc": {
    "name": "Momentum MACD",
@@ -43,12 +43,12 @@
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 374,
-   "p": 34,
-   "md": 7,
+   "n": 375,
+   "p": 35,
+   "md": 7.5,
    "d25": 3,
    "d75": 14,
-   "ev": -0.81
+   "ev": -0.7
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
@@ -88,10 +88,10 @@
   "ema2050": "B"
  },
  "klci": {
-  "d": "2026-10-29",
-  "c": 77775.11,
-  "ch": -4.3,
-  "m1": -6.99,
+  "d": "2026-10-30",
+  "c": 77180.43,
+  "ch": -0.76,
+  "m1": -7.63,
   "up": 0
  }
 }
