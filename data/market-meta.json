@@ -1,10 +1,10 @@
 {
- "generated": "2026-11-01T06:06+00:00",
+ "generated": "2026-11-01T10:29+00:00",
  "asof": "2026-10-31",
  "provider": "yfinance",
  "currency": "USD",
- "rawLast": "2026-10-30",
- "hourFill": 21,
+ "rawLast": "2026-10-31",
+ "hourFill": 0,
  "count": 21,
  "priced": 21,
  "bt": {
@@ -89,7 +89,7 @@
  },
  "klci": {
   "d": "2026-10-31",
-  "c": 77436.68,
+  "c": 77434.75,
   "ch": 0.31,
   "m1": -8.74,
   "up": 0
