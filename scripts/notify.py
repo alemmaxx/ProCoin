@@ -146,12 +146,25 @@ def news(M, N, st):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kind", choices=["signals", "news", "test"], required=True)
+    ap.add_argument("--kind", choices=["signals", "news", "test", "sample"], required=True)
     ap.add_argument("--market", default=os.path.join(ROOT, "_site", "data", "market.json"))
     ap.add_argument("--news", default=os.path.join(ROOT, "data", "news.json"))
     a = ap.parse_args()
     if a.kind == "test":
         ok = send(f"✅ <b>ProCoin bersambung</b>\nAnda akan terima isyarat aktif, pemerhatian, isyarat tamat dan Berita Berpotensi di sini.\n{APP}")
+        sys.exit(0 if ok else 1)
+    if a.kind == "sample":
+        M = load(a.market) or {"meta": {"asof": date.today().isoformat()}, "stocks": {}}
+        ops = [(c, v, o) for c, v in M["stocks"].items() for o in (v.get("op") or [])]
+        ops.sort(key=lambda x: (x[2].get("g") != "A", x[2].get("ago") or 0))
+        if not ops:  # tiada isyarat hari ini: guna contoh rekaan
+            M = {"meta": {"asof": date.today().isoformat()}, "stocks": {"SOL": {"n": "Solana", "c": 150, "sp": [180, 176, 150],
+                 "op": [{"k": "drop2d", "g": "A", "ago": 0, "en": 150, "tg": 162, "sl": 133, "p": 67, "ev": 2.59, "n": 298}]}}}
+        else:
+            c, v, o = ops[0]
+            M = {"meta": M["meta"], "stocks": {c: dict(v, op=[dict(o, ago=0)])}}
+        msgs = [m for m in signals(M, {"sent": {}}) if m[0].startswith("sig:")]
+        ok = send("🧪 <b>UJIAN — contoh format isyarat</b> (bukan isyarat baharu)\n\n" + msgs[0][1] + f"\n{APP}")
         sys.exit(0 if ok else 1)
     st = load(STATE, {}) or {}
     st.setdefault("sent", {})

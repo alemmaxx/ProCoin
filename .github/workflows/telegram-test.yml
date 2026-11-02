@@ -17,4 +17,6 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python scripts/notify.py --kind test
+        run: |
+          curl -sSfL "https://alemmaxx.github.io/ProCoin/data/market.json" -o /tmp/market.json || true
+          python scripts/notify.py --kind sample --market /tmp/market.json
