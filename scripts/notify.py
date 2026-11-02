@@ -2,7 +2,7 @@
 
 Rahsia GitHub (Settings → Secrets and variables → Actions):
   TELEGRAM_TOKEN    token bot dari @BotFather
-  TELEGRAM_CHAT_ID  id chat anda (dari @userinfobot)
+  TELEGRAM_CHAT_ID  (pilihan) id chat lain; asal = saluran @procoinsignal
 Tanpa rahsia ini skrip hanya rekod keadaan dan tidak hantar apa-apa.
 
 Guna:
@@ -22,6 +22,7 @@ from datetime import date, datetime, timedelta, timezone
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 STATE = os.path.join(ROOT, "data", "notify-state.json")
 APP = "https://alemmaxx.github.io/ProCoin/"
+CHANNEL = "@procoinsignal"   # saluran Telegram awam (boleh ganti dengan rahsia TELEGRAM_CHAT_ID)
 MYT = timezone(timedelta(hours=8))
 NAME = {"drop2d": "Jatuh mendadak", "drop15": "Jatuh mendadak", "ema2050": "Trend EMA20×EMA50", "rsi2": "RSI 2", "brk20": "Breakout 20"}
 
@@ -56,7 +57,7 @@ def load(p, d=None):
 
 
 def send(text):
-    tok, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    tok, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), (os.environ.get("TELEGRAM_CHAT_ID", "").strip() or CHANNEL)
     if not tok or not chat:
         print("  (tiada TELEGRAM_TOKEN / TELEGRAM_CHAT_ID — tidak dihantar)\n   " + text.replace("\n", "\n   "))
         return False
