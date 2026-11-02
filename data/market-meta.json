@@ -1,12 +1,12 @@
 {
- "generated": "2026-11-01T10:29+00:00",
- "asof": "2026-10-31",
+ "generated": "2026-11-02T06:05+00:00",
+ "asof": "2026-11-01",
  "provider": "yfinance",
  "currency": "USD",
  "rawLast": "2026-10-31",
- "hourFill": 0,
+ "hourFill": 20,
  "count": 21,
- "priced": 21,
+ "priced": 20,
  "bt": {
   "h": 30,
   "tgt": 2.0,
@@ -16,50 +16,50 @@
  "setups": {
   "pb": {
    "name": "Koreksi dalam trend menaik",
-   "n": 55,
-   "p": 38,
+   "n": 53,
+   "p": 40,
    "md": 4,
    "d25": 4,
    "d75": 7,
-   "ev": -0.82
+   "ev": -0.3
   },
   "gc": {
    "name": "Golden cross",
-   "n": 90,
+   "n": 86,
    "p": 40,
    "md": 3.5,
    "d25": 2,
    "d75": 7,
-   "ev": 0.14
+   "ev": 0.05
   },
   "mc": {
    "name": "Momentum MACD",
-   "n": 364,
+   "n": 348,
    "p": 39,
-   "md": 3,
+   "md": 3.0,
    "d25": 2,
    "d75": 7,
-   "ev": -0.5
+   "ev": -0.48
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 374,
-   "p": 34,
+   "n": 358,
+   "p": 35,
    "md": 7,
    "d25": 3,
    "d75": 14,
-   "ev": -0.84
+   "ev": -0.62
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
-   "n": 298,
-   "w": 201,
+   "n": 285,
+   "w": 191,
    "p": 67,
    "md": 8,
    "d25": 5,
-   "d75": 11,
-   "ev": 2.59,
-   "aw": 9.81,
+   "d75": 12,
+   "ev": 2.48,
+   "aw": 9.69,
    "cf": "tinggi",
    "grade": "A",
    "rule": "Masuk bila coin jatuh lebih 15% dalam 2 hari (jualan panik). Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3\u00d7 ATR.",
@@ -68,13 +68,13 @@
   },
   "ema2050": {
    "name": "Trend: EMA20 lintas atas EMA50 (atas EMA200)",
-   "n": 135,
+   "n": 132,
    "w": 50,
-   "p": 37,
+   "p": 38,
    "md": 89.0,
    "d25": 63,
    "d75": 133,
-   "ev": 12.64,
+   "ev": 13.24,
    "aw": 55.41,
    "cf": "tinggi",
    "grade": "B",
@@ -88,10 +88,10 @@
   "ema2050": "B"
  },
  "klci": {
-  "d": "2026-10-31",
-  "c": 77434.75,
-  "ch": 0.31,
-  "m1": -8.74,
+  "d": "2026-11-01",
+  "c": 78225.42,
+  "ch": 1.02,
+  "m1": -7.42,
   "up": 0
  }
 }
