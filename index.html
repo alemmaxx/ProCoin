@@ -2907,6 +2907,16 @@ function rTetapan(){
 
 document.documentElement.lang=S.settings.lang==='en'?'en':'ms';
 if(IS_NATIVE)lnInit();
+/* APK: butang Kembali → tutup pop up dulu, kemudian ke tab Coin, akhir sekali tanya mahu keluar */
+function openExit(){if($('#exitP'))return;const en=S.settings.lang==='en';const d=document.createElement('div');d.className='help';d.id='exitP';
+  d.innerHTML=`<div class="help-p" role="dialog" aria-modal="true" style="text-align:center"><div style="font-size:40px;line-height:1">👋</div><h2 style="margin:8px 0 6px">${en?'Exit ProCoin?':'Keluar dari ProCoin?'}</h2>
+   <p class="muted" style="margin:0 0 14px">${en?'Signals & news are still sent to Telegram @procoinsignal while the app is closed.':'Isyarat & berita tetap dihantar ke Telegram @procoinsignal walaupun app ditutup.'}</p>
+   <div class="row" style="gap:8px"><button class="btn sec" id="exNo" style="flex:1">${en?'Cancel':'Batal'}</button><button class="btn red" id="exYes" style="flex:1">${en?'Exit':'Keluar'}</button></div></div>`;
+  document.body.appendChild(d);const close=()=>d.remove();d.onclick=e=>{if(e.target===d)close();};$('#exNo').onclick=close;
+  $('#exYes').onclick=()=>{const App=window.Capacitor.Plugins.App;close();if(App)(App.exitApp?App.exitApp():App.minimizeApp());};}
+function onBackNative(){const ex=$('#exitP');if(ex){ex.remove();return;}
+  if(closeTopOverlay())return;if(TAB!=='coin'){goTab('coin');return;}openExit();}
+if(IS_NATIVE){const App=window.Capacitor.Plugins&&window.Capacitor.Plugins.App;if(App)App.addListener('backButton',onBackNative);}
 if(!IS_NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go)goTab(e.data.go);});
 render();
