@@ -3,11 +3,12 @@ name: Bina APK ProCoin
 on:
   push:
     branches: [main]
-    paths: ["index.html", "manifest.webmanifest", "privacy.html", "icons/**", "android-icons/**", "capacitor.config.json", "package.json", ".github/workflows/apk.yml"]
+    paths: ["index.html", "android-signing/**", "manifest.webmanifest", "privacy.html", "icons/**", "android-icons/**", "capacitor.config.json", "package.json", ".github/workflows/apk.yml"]
   workflow_dispatch: {}
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: procoin-apk
@@ -28,6 +29,8 @@ jobs:
           java-version: 17
       - name: Sediakan fail web (data diambil terus dari GitHub Pages)
         run: mkdir -p www && cp -r index.html manifest.webmanifest privacy.html icons www/
+      - name: Kunci tandatangan tetap (supaya APK baru boleh dikemas kini atas APK lama)
+        run: mkdir -p ~/.android && cp android-signing/debug.keystore ~/.android/debug.keystore
       - run: npm install
       - run: npx cap add android
       - name: Ikon app & ikon notifikasi
@@ -39,6 +42,24 @@ jobs:
       - name: Kebenaran notifikasi
         run: |
           sed -i 's#<application#<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.VIBRATE"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+      - name: Guna kunci tandatangan tetap dalam Gradle
+        run: |
+          cat >> android/app/build.gradle <<'GRADLE'
+
+          android {
+              signingConfigs {
+                  debug {
+                      storeFile rootProject.file('../android-signing/debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+              }
+              buildTypes {
+                  debug { signingConfig signingConfigs.debug }
+              }
+          }
+          GRADLE
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk ProCoin.apk
@@ -54,3 +75,7 @@ jobs:
           body: "Muat turun ProCoin.apk di bawah dan pasang di telefon Android."
           files: ProCoin.apk
           make_latest: true
+      - name: Kemas kini salinan APK di laman (GitHub Pages)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run main.yml --ref main -R ${{ github.repository }}

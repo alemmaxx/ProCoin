@@ -9,7 +9,7 @@ on:
   workflow_dispatch: {}
   push:
     branches: [main]
-    paths: ["index.html", "privacy.html", "manifest.webmanifest", "sw.js", "icons/**", "data/coins.json"]
+    paths: ["index.html", "privacy.html", "download.html", "manifest.webmanifest", "sw.js", "icons/**", "data/coins.json"]
 
 permissions:
   contents: write
@@ -86,7 +86,8 @@ jobs:
 
       - name: Sediakan laman
         run: |
-          cp index.html privacy.html manifest.webmanifest sw.js _site/
+          cp index.html privacy.html download.html manifest.webmanifest sw.js _site/
+          curl -sSLf -o _site/ProCoin.apk https://github.com/alemmaxx/ProCoin/releases/download/latest/ProCoin.apk && ls -la _site/ProCoin.apk || echo "APK belum ada dalam Release"
           cp data/paper-experiments.json data/exit-experiments.json data/status.json data/live.json data/research.json _site/data/ 2>/dev/null || true
           cp -r icons _site/icons
           touch _site/.nojekyll
