@@ -457,7 +457,9 @@ canvas#cv{touch-action:pan-y;cursor:crosshair}
    Bila app dibuka dari GitHub Pages, data dibaca dari folder data/ yang sama.
    Untuk APK (fail tempatan), tukar USERNAME & REPO di bawah kepada repo GitHub anda. */
 const PAGES_URL='https://alemmaxx.github.io/ProCoin/';
-const DATA_BASE=(location.protocol.startsWith('http')?'':PAGES_URL)+'data/';
+const IS_NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());   // APK Android (Capacitor)
+const APK_URL='https://github.com/alemmaxx/ProCoin/releases/download/latest/ProCoin.apk';
+const DATA_BASE=(location.protocol.startsWith('http')&&!IS_NATIVE?'':PAGES_URL)+'data/';
 /* Data besar diambil dari GitHub Pages (kuota percuma lebih besar); Firebase Hosting hanya sandaran. */
 const DATA_REMOTE=/(\.web\.app|\.firebaseapp\.com)$/.test(location.hostname)?PAGES_URL+'data/':DATA_BASE;
 function dfetch(p,o){const local=()=>fetch(DATA_BASE+p,o);if(DATA_REMOTE===DATA_BASE)return local();
@@ -1605,6 +1607,7 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'📱 App Android':'📱 Android app','⬇ Muat Turun APK Android':'⬇ Download Android APK','Anda sedang guna APK ProCoin. Data dan isyarat dikemas kini terus dari robot ProCoin. Untuk versi terbaru, muat turun semula APK dari laman web.':'You are using the ProCoin APK. Data and signals update directly from the ProCoin robot. For the newest version, download the APK again from the website.','Pasang ProCoin sebagai app di telefon Android. Isyarat & berita juga dihantar ke saluran Telegram':'Install ProCoin as an app on your Android phone. Signals & news are also sent to the Telegram channel',
 '📊 Ringkasan':'📊 Summary','📊 Ringkasan selesai':'📊 Closed summary','U/R':'P/L','Jumlah':'Total','Win = untung selepas kos. U/R = untung/rugi bersih ($).':'Win = profit after costs. P/L = net profit/loss ($).',
 'RSI 2 (lama)':'RSI 2 (old)','Breakout 20 (lama)':'Breakout 20 (old)','Manual (tanpa isyarat)':'Manual (no signal)','Trend EMA20×EMA50':'EMA20×EMA50 trend','Jatuh mendadak':'Sharp drop',
 'Sumber':'Source','Bil.':'No.',
@@ -2854,6 +2857,7 @@ function rTetapan(){
    ${S.sync.err?`<div class="alert a-amber" style="margin-top:10px">Segerak terakhir gagal: ${esc(S.sync.err)}</div>`:''}
    <button class="btn" style="margin-top:12px;width:100%" id="syncB">Segerak sekarang</button>
    <div class="disc">Robot ProCoin kira indicator semua coin setiap pagi selepas harga tutup harian (8 pagi waktu Malaysia), dan semak berita setiap 2 jam. App terima data terkini setiap kali dibuka.</div></div>`;
+  h+=IS_NATIVE?`<div class="card"><h2>📱 App Android</h2><p class="muted" style="margin:0;font-size:13px">Anda sedang guna APK ProCoin. Data dan isyarat dikemas kini terus dari robot ProCoin. Untuk versi terbaru, muat turun semula APK dari laman web.</p></div>`:`<div class="card"><h2>📱 App Android</h2><a class="btn gold" style="display:block;text-align:center;width:100%;box-sizing:border-box" href="${APK_URL}">⬇ Muat Turun APK Android</a><p class="muted" style="margin:10px 0 0;font-size:12.5px">Pasang ProCoin sebagai app di telefon Android. Isyarat & berita juga dihantar ke saluran Telegram <a href="https://t.me/procoinsignal" target="_blank" rel="noopener">@procoinsignal</a>.</p></div>`;
   h+=`<div class="card"><button class="btn sec" style="width:100%" onclick="openOnboard(0)">📖 Panduan ringkas app</button><button class="btn sec" style="width:100%;margin-top:8px" onclick="openHow()">📘 Cara app berjalan</button></div>`;
   h+=displayHTML();
   h+=platformHTML();
@@ -2868,7 +2872,7 @@ function rTetapan(){
    <div class="kv"><span>Berita</span><span>Google News</span></div>
    <div class="kv"><span>Senarai coin</span><span>Coin crypto besar ikut nilai pasaran</span></div>
    <p class="disc"><b>Penafian:</b> ProCoin ialah alat bantu maklumat dan pengiraan, bukan nasihat pelaburan. Isyarat teknikal untuk rujukan sahaja. Crypto sangat turun naik dan anda boleh hilang semua modal. Data harga daripada penyedia pihak ketiga bersifat indikatif dan mungkin berbeza dari harga sebenar di bursa crypto. Keputusan pelaburan adalah tanggungjawab pengguna.</p>
-   <a class="plink" href="privacy.html" target="_blank" rel="noopener">🔒 Privasi & Terma</a>
+   <a class="plink" href="${PAGES_URL}privacy.html" target="_blank" rel="noopener">🔒 Privasi & Terma</a>
    <p class="disc">ProCoin by ProKuiz · v1.0 · Robot dan tetapan disimpan dalam telefon ini sahaja. Guna Sandaran data untuk pindah ke telefon lain.</p></div>`;
   $('#main').innerHTML=h;
   $('#syncB').onclick=()=>syncData(true);
@@ -2887,7 +2891,7 @@ function rTetapan(){
 }
 
 document.documentElement.lang=S.settings.lang==='en'?'en':'ms';
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(!IS_NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go)goTab(e.data.go);});
 render();
 if(location.hash==='#robot'){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}goTab('robot');}
