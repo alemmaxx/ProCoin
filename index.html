@@ -1520,12 +1520,21 @@ function unread(list){const A=AL();return list.filter(a=>!A.seen[a.id]);}
 function updateBell(){const n=unread(computeAlerts());const b=$('#bellN');if(!b)return;b.textContent=n.length>9?'9+':n.length;b.style.display=n.length?'grid':'none';
   $('#bell').classList.toggle('hot',n.some(a=>a.lv==='critical'));}
 const NOTI_ICON='icons/icon-192.png';
+/* APK (Capacitor): notifikasi Android sebenar */
+const LN=()=>window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
+function notiOn(){const A=AL();return !!A.notify&&(IS_NATIVE?!!LN():('Notification' in window&&Notification.permission==='granted'));}
+function notiId(tag){let h=0;for(const ch of String(tag))h=(h*31+ch.charCodeAt(0))|0;return Math.abs(h)%2000000000+1;}
+let LN_READY=false;
+async function lnInit(){if(!IS_NATIVE||!LN()||LN_READY)return;LN_READY=true;
+  try{await LN().createChannel({id:'procoin',name:'ProCoin',description:'Isyarat, berita & Robot',importance:5,visibility:1,vibration:true});}catch(e){}
+  try{LN().addListener('localNotificationActionPerformed',a=>{const g=a&&a.notification&&a.notification.extra&&a.notification.extra.go;setTimeout(()=>{if(g==='robot')goTab('robot');else openAlerts();},300);});}catch(e){}}
 async function showNoti(title,body,tag){
+  if(IS_NATIVE){try{await lnInit();await LN().schedule({notifications:[{id:notiId(tag),title,body,channelId:'procoin',smallIcon:'ic_stat_pc',iconColor:'#d9b44a',extra:{go:String(tag).startsWith('man:')||String(tag).startsWith('autoin')?'robot':'alerts'}}]});}catch(e){}return;}
   try{if('serviceWorker' in navigator){const r=await navigator.serviceWorker.getRegistration();if(r){await r.showNotification(title,{body,tag,icon:NOTI_ICON,badge:NOTI_ICON,data:{url:'./#robot'}});return;}}}catch(e){}
   try{new Notification(title,{body,tag,icon:NOTI_ICON});}catch(e){}
 }
 function notifyNew(){
-  const A=AL();robotStateSync();if(!A.notify||!('Notification' in window)||Notification.permission!=='granted')return;
+  const A=AL();robotStateSync();if(!notiOn())return;
   computeAlerts().filter(a=>a.lv!=='info'&&!A.notified[a.id]&&!A.seen[a.id]).slice(0,4).forEach(a=>{showNoti(trText(a.title),trText(a.body),a.id);A.notified[a.id]=1;});
   save();robotStateSync();
 }
@@ -1559,6 +1568,9 @@ function openAlerts(){
 }
 async function enableNotify(){
   const A=AL();
+  if(IS_NATIVE&&LN()){let ok=false;try{await lnInit();const q=await LN().requestPermissions();ok=q&&q.display==='granted';}catch(e){}
+    if(ok){A.notify=true;save();toast('✓ Notifikasi dihidupkan');showNoti('ProCoin','✓ Notifikasi aktif. Isyarat, berita & Robot akan muncul di sini.','test:'+Date.now());notifyNew();}else toast('Kebenaran notifikasi ditolak. Benarkan di Tetapan telefon → Apps → ProCoin → Notifications.');
+    if($('#sheet').classList.contains('on'))openAlerts();else render();return;}
   if(!('Notification' in window)){toast('Peranti ini tidak menyokong notifikasi web. Amaran tetap dipaparkan dalam app.');return;}
   const p=await Notification.requestPermission();
   if(p==='granted'){A.notify=true;save();toast('✓ Notifikasi dihidupkan');notifyNew();regPeriodic();}else toast('Kebenaran notifikasi ditolak');
@@ -1593,7 +1605,7 @@ function alertSettingsHTML(){
    teknikal:['📈','Isyarat teknikal','Golden/death cross dan RSI melampau untuk coin dalam Robot anda.',0]};
   return `<div class="card"><h2>Amaran</h2>
    ${Object.entries(lab).map(([k,[ic,t,d,ph]])=>`<div class="toggle altg"><div><b>${ic} ${t}</b><small>${d}</small></div><input type="checkbox" data-alon="${k}" ${A.on[k]?'checked':''}></div>`).join('')}
-   <div class="toggle" style="margin-top:6px"><span>Notifikasi telefon ${A.notify&&'Notification' in window&&Notification.permission==='granted'?'<span class="badge b-ok">aktif</span>':''}</span>
+   <div class="toggle" style="margin-top:6px"><span>Notifikasi telefon ${notiOn()?'<span class="badge b-ok">aktif</span>':''}</span>
    ${A.notify?`<button class="btn sm sec" id="alOff">Matikan</button>`:`<button class="btn sm gold" id="alOn">Hidupkan</button>`}</div>
    <div class="disc">Amaran dikira dalam telefon anda bila app dibuka. Hidupkan Notifikasi telefon supaya amaran penting muncul sebagai notifikasi.</div></div>`;
 }
@@ -1607,6 +1619,7 @@ function bindAlertSettings(){
    App ditulis dalam BM. Bila EN dipilih, setiap teks yang dipaparkan diterjemah
    (padanan tepat → corak dinamik → frasa), termasuk teks yang muncul kemudian. */
 const EN_EXACT={
+'Kebenaran notifikasi ditolak. Benarkan di Tetapan telefon → Apps → ProCoin → Notifications.':'Notification permission denied. Allow it in phone Settings → Apps → ProCoin → Notifications.','✓ Notifikasi aktif. Isyarat, berita & Robot akan muncul di sini.':'✓ Notifications on. Signals, news & Robot alerts will appear here.',
 'Muat turun gagal? Buka halaman muat turun':'Download failed? Open the download page',
 '📱 App Android':'📱 Android app','⬇ Muat Turun APK Android':'⬇ Download Android APK','Anda sedang guna APK ProCoin. Data dan isyarat dikemas kini terus dari robot ProCoin. Untuk versi terbaru, muat turun semula APK dari laman web.':'You are using the ProCoin APK. Data and signals update directly from the ProCoin robot. For the newest version, download the APK again from the website.','Pasang ProCoin sebagai app di telefon Android. Isyarat & berita juga dihantar ke saluran Telegram':'Install ProCoin as an app on your Android phone. Signals & news are also sent to the Telegram channel',
 '📊 Ringkasan':'📊 Summary','📊 Ringkasan selesai':'📊 Closed summary','U/R':'P/L','Jumlah':'Total','Win = untung selepas kos. U/R = untung/rugi bersih ($).':'Win = profit after costs. P/L = net profit/loss ($).',
@@ -2477,7 +2490,7 @@ const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigat
 const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL_EVT=e;updateInstallBtn();});
 window.addEventListener('appinstalled',()=>{INSTALL_EVT=null;updateInstallBtn();toast('✓ ProCoin dipasang');});
-function canOfferInstall(){return !isStandalone()&&(INSTALL_EVT||isIOS()||/android/i.test(navigator.userAgent));}
+function canOfferInstall(){return !IS_NATIVE&&!isStandalone()&&(INSTALL_EVT||isIOS()||/android/i.test(navigator.userAgent));}
 function updateInstallBtn(){const b=$('#instB');if(b)b.style.display=canOfferInstall()?'':'none';}
 async function installApp(){
   if(INSTALL_EVT){INSTALL_EVT.prompt();const r=await INSTALL_EVT.userChoice;INSTALL_EVT=null;updateInstallBtn();if(r.outcome==='accepted')toast('✓ ProCoin dipasang');return;}
@@ -2892,6 +2905,7 @@ function rTetapan(){
 }
 
 document.documentElement.lang=S.settings.lang==='en'?'en':'ms';
+if(IS_NATIVE)lnInit();
 if(!IS_NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go)goTab(e.data.go);});
 render();

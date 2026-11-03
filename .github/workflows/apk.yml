@@ -30,12 +30,15 @@ jobs:
         run: mkdir -p www && cp -r index.html manifest.webmanifest privacy.html icons www/
       - run: npm install
       - run: npx cap add android
-      - name: Ikon app
+      - name: Ikon app & ikon notifikasi
         run: |
           RES=android/app/src/main/res
           rm -rf $RES/mipmap-anydpi-v26
           cp -r android-icons/res/* $RES/
           printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0a1210</color>\n</resources>\n' > $RES/values/ic_launcher_background.xml
+      - name: Kebenaran notifikasi
+        run: |
+          sed -i 's#<application#<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.VIBRATE"/>\n    <application#' android/app/src/main/AndroidManifest.xml
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk ProCoin.apk

@@ -2,5 +2,11 @@
   "appId": "com.prokuiz.procoin",
   "appName": "ProCoin",
   "webDir": "www",
-  "backgroundColor": "#0a1210"
+  "backgroundColor": "#0a1210",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_pc",
+      "iconColor": "#d9b44a"
+    }
+  }
 }
