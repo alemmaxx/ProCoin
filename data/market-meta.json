@@ -1,12 +1,12 @@
 {
- "generated": "2026-11-03T06:49+00:00",
+ "generated": "2026-11-03T10:55+00:00",
  "asof": "2026-11-02",
  "provider": "yfinance",
  "currency": "USD",
- "rawLast": "2026-11-01",
- "hourFill": 20,
+ "rawLast": "2026-11-02",
+ "hourFill": 0,
  "count": 21,
- "priced": 20,
+ "priced": 21,
  "bt": {
   "h": 30,
   "tgt": 2.0,
@@ -16,50 +16,50 @@
  "setups": {
   "pb": {
    "name": "Koreksi dalam trend menaik",
-   "n": 54,
-   "p": 37,
-   "md": 4.0,
+   "n": 55,
+   "p": 38,
+   "md": 4,
    "d25": 4,
    "d75": 7,
-   "ev": -1.05
+   "ev": -0.82
   },
   "gc": {
    "name": "Golden cross",
-   "n": 85,
+   "n": 90,
    "p": 40,
    "md": 3.5,
    "d25": 2,
    "d75": 7,
-   "ev": 0.11
+   "ev": 0.14
   },
   "mc": {
    "name": "Momentum MACD",
-   "n": 345,
+   "n": 364,
    "p": 39,
    "md": 3,
    "d25": 2,
    "d75": 7,
-   "ev": -0.56
+   "ev": -0.5
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 367,
+   "n": 379,
    "p": 35,
-   "md": 7.0,
+   "md": 7,
    "d25": 3,
    "d75": 13,
-   "ev": -0.7
+   "ev": -0.72
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
-   "n": 283,
-   "w": 188,
-   "p": 66,
-   "md": 8.0,
+   "n": 298,
+   "w": 201,
+   "p": 67,
+   "md": 8,
    "d25": 5,
-   "d75": 12,
-   "ev": 2.46,
-   "aw": 9.89,
+   "d75": 11,
+   "ev": 2.59,
+   "aw": 9.81,
    "cf": "tinggi",
    "grade": "A",
    "rule": "Masuk bila coin jatuh lebih 15% dalam 2 hari (jualan panik). Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3\u00d7 ATR.",
@@ -68,14 +68,14 @@
   },
   "ema2050": {
    "name": "Trend: EMA20 lintas atas EMA50 (atas EMA200)",
-   "n": 129,
-   "w": 47,
-   "p": 36,
-   "md": 88,
-   "d25": 62,
+   "n": 135,
+   "w": 50,
+   "p": 37,
+   "md": 89.0,
+   "d25": 63,
    "d75": 133,
-   "ev": 11.99,
-   "aw": 54.71,
+   "ev": 12.64,
+   "aw": 55.41,
    "cf": "tinggi",
    "grade": "B",
    "rule": "Masuk bila EMA20 lintas atas EMA50 (harga atas EMA200). Pegang selagi trend kekal; keluar bila EMA20 jatuh bawah EMA50.",
@@ -89,7 +89,7 @@
  },
  "klci": {
   "d": "2026-11-02",
-  "c": 76674.13,
+  "c": 76677.3,
   "ch": -2.01,
   "m1": -9.54,
   "up": 0
