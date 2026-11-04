@@ -26,16 +26,12 @@
   "news:UNI:FYWZSd2tfZ2NpdGdabkhkYW5xaHV3Z3dncGJQR0lENmRSczZOWXM4Vg?oc=5": "2026-11-03",
   "news:TRX:zQmdnOHQ0a0V1UGtsNVFhbko2b0VFa1M2SXNON2FZSFRuVWMwWlRGcw?oc=5": "2026-11-03",
   "news:NEAR:YzRZTG5DRHBlMnQxeUVILXNvM1V1V0I2Qk9rX2RvQzlOXzFPZloyZ2s?oc=5": "2026-11-03",
-  "news:HBAR:HJEWUFzb29lX21ubGw4TUZXdlA1MGpiRlFfejMzV2FIWVZRUlJkcW1j?oc=5": "2026-11-04"
+  "news:HBAR:HJEWUFzb29lX21ubGw4TUZXdlA1MGpiRlFfejMzV2FIWVZRUlJkcW1j?oc=5": "2026-11-04",
+  "end:BTC:ema2050:2026-08-20": "2026-11-04",
+  "news:XRP:UnY2c2I5OVBDbzBadFFEdTFDWjAzbzVabldxNU1zWExNUUMzcUdVMy0?oc=5": "2026-11-04"
  },
  "init": 1,
  "open": {
-  "BTC:ema2050": {
-   "sd": "2026-08-20",
-   "en": 73031.09,
-   "g": "B",
-   "n": "Bitcoin"
-  },
   "NEAR:ema2050": {
    "sd": "2026-08-27",
    "en": 1.92693,

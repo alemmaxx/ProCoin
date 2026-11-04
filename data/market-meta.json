@@ -1,10 +1,10 @@
 {
- "generated": "2026-11-03T10:55+00:00",
- "asof": "2026-11-02",
+ "generated": "2026-11-04T06:24+00:00",
+ "asof": "2026-11-03",
  "provider": "yfinance",
  "currency": "USD",
  "rawLast": "2026-11-02",
- "hourFill": 0,
+ "hourFill": 21,
  "count": 21,
  "priced": 21,
  "bt": {
@@ -30,7 +30,7 @@
    "md": 3.5,
    "d25": 2,
    "d75": 7,
-   "ev": 0.14
+   "ev": 0.13
   },
   "mc": {
    "name": "Momentum MACD",
@@ -43,23 +43,23 @@
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 379,
-   "p": 35,
+   "n": 380,
+   "p": 36,
    "md": 7,
    "d25": 3,
-   "d75": 13,
-   "ev": -0.72
+   "d75": 12,
+   "ev": -0.34
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
-   "n": 298,
-   "w": 201,
-   "p": 67,
-   "md": 8,
+   "n": 296,
+   "w": 200,
+   "p": 68,
+   "md": 8.0,
    "d25": 5,
-   "d75": 11,
-   "ev": 2.59,
-   "aw": 9.81,
+   "d75": 12,
+   "ev": 2.63,
+   "aw": 9.84,
    "cf": "tinggi",
    "grade": "A",
    "rule": "Masuk bila coin jatuh lebih 15% dalam 2 hari (jualan panik). Keluar bila harga tutup atas EMA10, atau selepas 20 hari. Cut loss 3\u00d7 ATR.",
@@ -68,14 +68,14 @@
   },
   "ema2050": {
    "name": "Trend: EMA20 lintas atas EMA50 (atas EMA200)",
-   "n": 135,
-   "w": 50,
-   "p": 37,
-   "md": 89.0,
+   "n": 136,
+   "w": 51,
+   "p": 38,
+   "md": 88,
    "d25": 63,
    "d75": 133,
-   "ev": 12.64,
-   "aw": 55.41,
+   "ev": 12.58,
+   "aw": 54.42,
    "cf": "tinggi",
    "grade": "B",
    "rule": "Masuk bila EMA20 lintas atas EMA50 (harga atas EMA200). Pegang selagi trend kekal; keluar bila EMA20 jatuh bawah EMA50.",
@@ -88,10 +88,10 @@
   "ema2050": "B"
  },
  "klci": {
-  "d": "2026-11-02",
-  "c": 76677.3,
-  "ch": -2.01,
-  "m1": -9.54,
+  "d": "2026-11-03",
+  "c": 77332.9,
+  "ch": 0.86,
+  "m1": -10.58,
   "up": 0
  }
 }
