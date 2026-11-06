@@ -1,10 +1,10 @@
 {
- "generated": "2026-11-05T10:57+00:00",
- "asof": "2026-11-04",
+ "generated": "2026-11-06T06:48+00:00",
+ "asof": "2026-11-05",
  "provider": "yfinance",
  "currency": "USD",
  "rawLast": "2026-11-04",
- "hourFill": 0,
+ "hourFill": 21,
  "count": 21,
  "priced": 21,
  "bt": {
@@ -34,21 +34,21 @@
   },
   "mc": {
    "name": "Momentum MACD",
-   "n": 364,
+   "n": 365,
    "p": 39,
    "md": 3,
    "d25": 2,
    "d75": 7,
-   "ev": -0.5
+   "ev": -0.51
   },
   "os": {
    "name": "Lantunan lebih jualan",
    "n": 379,
-   "p": 35,
-   "md": 7.5,
+   "p": 36,
+   "md": 7.0,
    "d25": 3,
    "d75": 14,
-   "ev": -0.46
+   "ev": -0.09
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
@@ -88,10 +88,10 @@
   "ema2050": "B"
  },
  "klci": {
-  "d": "2026-11-04",
-  "c": 80405.29,
-  "ch": 3.96,
-  "m1": -6.27,
+  "d": "2026-11-05",
+  "c": 75966.71,
+  "ch": -5.52,
+  "m1": -11.21,
   "up": 0
  }
 }
