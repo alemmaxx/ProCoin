@@ -62,7 +62,8 @@
   "news:AAVE:ekZHLS1HUzBSam5rOXV0REstN3ZPbWkzNTMwRGp4dGZqeDVsRjkySU0?oc=5": "2026-11-07",
   "news:TRX:TWc5cVVDcnZLTDJFZzNHR3hLemtsbjc2bHp6VzNYTmZJMVEtUG1iV3c?oc=5": "2026-11-07",
   "news:SOL:CRUNxQWxuaVBjNDVFeWlWTFZJamlabjlzR1V4bUVINkRyN3RUUGxnbw?oc=5": "2026-11-08",
-  "news:TRX:WnNSMGU4ZlZmR3ZWczJyT3VyejNwYjVFUUp1YWlLanBtNTI5b3FwLWs?oc=5": "2026-11-08"
+  "news:TRX:WnNSMGU4ZlZmR3ZWczJyT3VyejNwYjVFUUp1YWlLanBtNTI5b3FwLWs?oc=5": "2026-11-08",
+  "sig:SHIB:drop2d:2026-11-07": "2026-11-08"
  },
  "init": 1,
  "open": {
@@ -71,6 +72,12 @@
    "en": 1.92693,
    "g": "B",
    "n": "NEAR Protocol"
+  },
+  "SHIB:drop2d": {
+   "sd": "2026-11-07",
+   "en": 4e-06,
+   "g": "A",
+   "n": "Shiba Inu"
   }
  }
 }
