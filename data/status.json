@@ -1,6 +1,6 @@
 {
- "level": "warn",
- "since": "2026-11-10T18:00+08:00",
+ "level": "down",
+ "since": "2026-11-11T14:44+08:00",
  "keys": [
   "data",
   "run_main"
