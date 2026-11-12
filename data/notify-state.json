@@ -90,16 +90,11 @@
   "news:AAVE:qWnEyMUlVd2RZdG1iZGt3LW1KZ3lLSENPNS0tRy1BcjBsY0pSem5iWQ?oc=5": "2026-11-12",
   "news:AAVE:5bXZtWHJMc3VQWk5wUDEybUlVU2xLeFVJZS1wMkkyUVpBWmhPWlR6QQ?oc=5": "2026-11-12",
   "news:TRX:k92U25kLXNjOUdnNFRtLUtzc0g4YU44QkpfbUJicDliVktvbTZ1aGpJ?oc=5": "2026-11-12",
-  "news:ETC:lpqNXZ4UHNwQ0VhN1lDclFEZXlBckt3VVlZTF9yUmxJcjNoWVBNMzlv?oc=5": "2026-11-12"
+  "news:ETC:lpqNXZ4UHNwQ0VhN1lDclFEZXlBckt3VVlZTF9yUmxJcjNoWVBNMzlv?oc=5": "2026-11-12",
+  "end:NEAR:ema2050:2026-08-27": "2026-11-12"
  },
  "init": 1,
  "open": {
-  "NEAR:ema2050": {
-   "sd": "2026-08-27",
-   "en": 1.92693,
-   "g": "B",
-   "n": "NEAR Protocol"
-  },
   "SHIB:drop2d": {
    "sd": "2026-11-07",
    "en": 4e-06,
