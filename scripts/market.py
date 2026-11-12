@@ -289,7 +289,10 @@ def main():
             json.dump(out, open(os.path.join(a.out, "s", f"{c}.json"), "w"), separators=(",", ":"))
         stocks[c] = item
     asof = max((v.get("d", "") for v in stocks.values()), default="")
-    track.update(px, stocks, asof, a.out)
+    try:  # rekod sampingan: ralat di sini tidak boleh hentikan kemas kini harga & isyarat
+        track.update(px, stocks, asof, a.out)
+    except Exception as e:  # noqa: BLE001
+        print(f"⚠️ rekod isyarat (track) dilangkau: {e!r}")
     paper.build(runs, px, stocks, asof, a.out)
     try:
         import exits

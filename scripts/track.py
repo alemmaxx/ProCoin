@@ -28,8 +28,10 @@ def resolve(sig, rows):
     after = [r for r in rows if r[0] > sig["d"]]
     if not after:
         return None
-    entry = float(after[0][1] or after[0][4])
-    sig["entry"] = round(entry, 4)
+    entry = float(after[0][1] or after[0][4] or 0)
+    if entry <= 0:
+        return None
+    sig["entry"] = float(f"{entry:.6g}")   # angka bererti (coin murah seperti SHIB ≈ 0.000004)
     for i, r in enumerate(after[: BT.H]):
         lo, hi = float(r[3] or r[4]), float(r[2] or r[4])
         if lo <= sig["sl"]:
@@ -43,6 +45,8 @@ def resolve(sig, rows):
 
 
 def ret(s):
+    if not s.get("entry"):
+        return 0.0
     return round((s["exit"] / s["entry"] - 1 - BT.FEE) * 100, 2)
 
 
