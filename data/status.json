@@ -1,10 +1,6 @@
 {
- "level": "warn",
- "since": "2026-11-14T11:23+08:00",
- "keys": [
-  "data"
- ],
- "raw": [
-  "data"
- ]
+ "level": "ok",
+ "since": null,
+ "keys": [],
+ "raw": []
 }
