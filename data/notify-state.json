@@ -108,25 +108,32 @@
   "news:TRX:Y0ViZExNMTBiZDVtMGVDZDZKaTUyRmRTZHlEelFPcjktWVk1MVA3RDQ?oc=5": "2026-11-15",
   "sig:ADA:drop2d:2026-11-14": "2026-11-15",
   "sig:DOT:drop2d:2026-11-14": "2026-11-15",
-  "sig:UNI:drop2d:2026-11-14": "2026-11-15"
+  "sig:UNI:drop2d:2026-11-14": "2026-11-15",
+  "sig:AVAX:drop2d:2026-11-14": "2026-11-15"
  },
  "init": 1,
  "open": {
   "ADA:drop2d": {
    "sd": "2026-11-14",
-   "en": 0.1477,
+   "en": 0.147525,
    "g": "A",
    "n": "Cardano"
   },
+  "AVAX:drop2d": {
+   "sd": "2026-11-14",
+   "en": 7.09121,
+   "g": "A",
+   "n": "Avalanche"
+  },
   "DOT:drop2d": {
    "sd": "2026-11-14",
-   "en": 0.7069,
+   "en": 0.705795,
    "g": "A",
    "n": "Polkadot"
   },
   "UNI:drop2d": {
    "sd": "2026-11-14",
-   "en": 4.8848,
+   "en": 4.88474,
    "g": "A",
    "n": "Uniswap"
   },
