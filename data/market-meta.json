@@ -1,9 +1,9 @@
 {
- "generated": "2026-11-17T11:53+00:00",
- "asof": "2026-11-16",
+ "generated": "2026-11-18T07:31+00:00",
+ "asof": "2026-11-17",
  "provider": "yfinance",
  "currency": "USD",
- "rawLast": "2026-11-16",
+ "rawLast": "2026-11-17",
  "hourFill": 0,
  "count": 21,
  "priced": 21,
@@ -43,12 +43,12 @@
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 393,
-   "p": 33,
-   "md": 7.0,
+   "n": 387,
+   "p": 34,
+   "md": 7,
    "d25": 3,
    "d75": 13,
-   "ev": -1.02
+   "ev": -0.7
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
@@ -68,14 +68,14 @@
   },
   "ema2050": {
    "name": "Trend: EMA20 lintas atas EMA50 (atas EMA200)",
-   "n": 137,
-   "w": 52,
+   "n": 138,
+   "w": 53,
    "p": 38,
-   "md": 88.0,
+   "md": 88,
    "d25": 68,
-   "d75": 133,
-   "ev": 13.13,
-   "aw": 55.05,
+   "d75": 128,
+   "ev": 13.08,
+   "aw": 54.14,
    "cf": "tinggi",
    "grade": "B",
    "rule": "Masuk bila EMA20 lintas atas EMA50 (harga atas EMA200). Pegang selagi trend kekal; keluar bila EMA20 jatuh bawah EMA50.",
@@ -88,10 +88,10 @@
   "ema2050": "B"
  },
  "klci": {
-  "d": "2026-11-16",
-  "c": 64855.84,
-  "ch": -0.69,
-  "m1": -20.31,
+  "d": "2026-11-17",
+  "c": 64893.95,
+  "ch": 0.06,
+  "m1": -20.88,
   "up": 0
  }
 }
