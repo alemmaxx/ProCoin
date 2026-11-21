@@ -150,7 +150,10 @@
   "news:SUI:jT1JRc1Uzckp2b05jYmZSd2pzSEZrbDVKNV8yNW8xaHJEemJ2MjVhZw?oc=5": "2026-11-20",
   "news:TRX:mR1YU9LRDl3LXBWamU5S3Z3MnJzSHNMbzhUUFFFWk11WjF3c0ZraG1t?oc=5": "2026-11-20",
   "news:DOT:mbWYtTERscEUxeWtLTnZiMGlZdC1DcWFmWkxscWNpTG5xaVdUdnZDMA?oc=5": "2026-11-20",
-  "news:SHIB:dW4zbXd0OTBQRVQ3Q0g3TTV4X1lMM1ViU1ZCYU9oNk05NXl4aTRtYkE?oc=5": "2026-11-21"
+  "news:SHIB:dW4zbXd0OTBQRVQ3Q0g3TTV4X1lMM1ViU1ZCYU9oNk05NXl4aTRtYkE?oc=5": "2026-11-21",
+  "end:SHIB:drop2d:2026-11-07": "2026-11-21",
+  "news:NEAR:lckswdktPT01JY25kaWhoZ21LS042S2Y4a2ZzWlFsWFdVN1RiSUpjOQ?oc=5": "2026-11-21",
+  "news:SHIB:c2ZWZG00YUtnYXlPUDlfbElCY3Y3TVlWUF91SXJGQjA3VkFrd3VvVFE?oc=5": "2026-11-21"
  },
  "init": 1,
  "open": {
@@ -177,12 +180,6 @@
    "en": 4.88474,
    "g": "A",
    "n": "Uniswap"
-  },
-  "SHIB:drop2d": {
-   "sd": "2026-11-07",
-   "en": 4e-06,
-   "g": "A",
-   "n": "Shiba Inu"
   }
  }
 }
