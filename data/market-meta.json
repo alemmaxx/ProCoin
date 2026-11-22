@@ -1,10 +1,10 @@
 {
- "generated": "2026-11-22T06:49+00:00",
+ "generated": "2026-11-22T11:26+00:00",
  "asof": "2026-11-21",
  "provider": "yfinance",
  "currency": "USD",
- "rawLast": "2026-11-20",
- "hourFill": 21,
+ "rawLast": "2026-11-21",
+ "hourFill": 0,
  "count": 21,
  "priced": 21,
  "bt": {
@@ -16,12 +16,12 @@
  "setups": {
   "pb": {
    "name": "Koreksi dalam trend menaik",
-   "n": 57,
-   "p": 37,
+   "n": 56,
+   "p": 38,
    "md": 4,
    "d25": 4,
    "d75": 7,
-   "ev": -1.12
+   "ev": -0.87
   },
   "gc": {
    "name": "Golden cross",
@@ -43,12 +43,12 @@
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 396,
+   "n": 395,
    "p": 34,
    "md": 7,
    "d25": 3,
    "d75": 13,
-   "ev": -0.63
+   "ev": -0.59
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
@@ -89,9 +89,9 @@
  },
  "klci": {
   "d": "2026-11-21",
-  "c": 60086.0,
-  "ch": 2.19,
-  "m1": -26.1,
+  "c": 60094.09,
+  "ch": 2.2,
+  "m1": -26.09,
   "up": 0
  }
 }
