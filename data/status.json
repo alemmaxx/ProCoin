@@ -1,7 +1,9 @@
 {
  "level": "ok",
  "since": null,
- "keys": [],
+ "keys": [
+  "run_main"
+ ],
  "raw": [
   "run_main"
  ]
