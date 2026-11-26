@@ -1,9 +1,9 @@
 {
- "generated": "2026-11-25T12:57+00:00",
- "asof": "2026-11-24",
+ "generated": "2026-11-26T08:21+00:00",
+ "asof": "2026-11-25",
  "provider": "yfinance",
  "currency": "USD",
- "rawLast": "2026-11-24",
+ "rawLast": "2026-11-25",
  "hourFill": 0,
  "count": 21,
  "priced": 21,
@@ -43,12 +43,12 @@
   },
   "os": {
    "name": "Lantunan lebih jualan",
-   "n": 392,
-   "p": 35,
-   "md": 7.5,
+   "n": 389,
+   "p": 34,
+   "md": 7,
    "d25": 3,
-   "d75": 14,
-   "ev": -0.4
+   "d75": 12,
+   "ev": -0.81
   },
   "drop2d": {
    "name": "Jatuh mendadak (lantunan selepas jualan panik)",
@@ -88,10 +88,10 @@
   "ema2050": "B"
  },
  "klci": {
-  "d": "2026-11-24",
-  "c": 59747.77,
-  "ch": -2.39,
-  "m1": -25.34,
+  "d": "2026-11-25",
+  "c": 60378.2,
+  "ch": 1.06,
+  "m1": -24.53,
   "up": 0
  }
 }
